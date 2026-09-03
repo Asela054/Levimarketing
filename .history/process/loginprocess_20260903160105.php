@@ -10,7 +10,7 @@ date_default_timezone_set(TIMEZONE);
 //Start Database
 $IP = "localhost";
 $user = "root";
-$pass = "";
+$pass = "eRaws79rvDB";
 $db = "erav_levimarketerp";
 $con = mysqli_connect($IP, $user, $pass, $db);
 

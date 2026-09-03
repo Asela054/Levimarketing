@@ -4,7 +4,7 @@ date_default_timezone_set(TIMEZONE);
 
 $servername = "localhost";
 $username = "root";
-$password = "";
+$password = "asela123";
 $databse = "erav_levimarketerp";
 
 // Create connection
