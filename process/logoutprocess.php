@@ -1,0 +1,12 @@
+<?php
+session_start();
+if(!isset($_SESSION['userid'])){header('Location:../index.php');}
+if($_SESSION['postype']==1){ 
+    session_destroy();
+    {header("Location:../pos.php");}
+}
+else{
+    session_destroy();
+    {header("Location:../index.php");}
+}
+?>

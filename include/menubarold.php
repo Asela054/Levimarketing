@@ -1,0 +1,213 @@
+<?php 
+$getUrl=$_SERVER['SCRIPT_NAME'];
+$url=explode('/', $getUrl);
+$lastElement=end($url);
+
+if($lastElement=='useraccount.php'){
+    $addcheck=checkprivilege($menuprivilegearray, 1, 1);
+    $editcheck=checkprivilege($menuprivilegearray, 1, 2);
+    $statuscheck=checkprivilege($menuprivilegearray, 1, 3);
+    $deletecheck=checkprivilege($menuprivilegearray, 1, 4);
+}
+else if($lastElement=='usertype.php'){
+    $addcheck=checkprivilege($menuprivilegearray, 2, 1);
+    $editcheck=checkprivilege($menuprivilegearray, 2, 2);
+    $statuscheck=checkprivilege($menuprivilegearray, 2, 3);
+    $deletecheck=checkprivilege($menuprivilegearray, 2, 4);
+}
+else if($lastElement=='userprivilege.php'){
+    $addcheck=checkprivilege($menuprivilegearray, 3, 1);
+    $editcheck=checkprivilege($menuprivilegearray, 3, 2);
+    $statuscheck=checkprivilege($menuprivilegearray, 3, 3);
+    $deletecheck=checkprivilege($menuprivilegearray, 3, 4);
+}
+else if($lastElement=='product.php'){
+    $addcheck=checkprivilege($menuprivilegearray, 4, 1);
+    $editcheck=checkprivilege($menuprivilegearray, 4, 2);
+    $statuscheck=checkprivilege($menuprivilegearray, 4, 3);
+    $deletecheck=checkprivilege($menuprivilegearray, 4, 4);
+}
+else if($lastElement=='productcategory.php'){
+    $addcheck=checkprivilege($menuprivilegearray, 5, 1);
+    $editcheck=checkprivilege($menuprivilegearray, 5, 2);
+    $statuscheck=checkprivilege($menuprivilegearray, 5, 3);
+    $deletecheck=checkprivilege($menuprivilegearray, 5, 4);
+}
+else if($lastElement=='groupcategory.php'){
+    $addcheck=checkprivilege($menuprivilegearray, 6, 1);
+    $editcheck=checkprivilege($menuprivilegearray, 6, 2);
+    $statuscheck=checkprivilege($menuprivilegearray, 6, 3);
+    $deletecheck=checkprivilege($menuprivilegearray, 6, 4);
+}
+else if($lastElement=='subproductcategory.php'){
+    $addcheck=checkprivilege($menuprivilegearray, 7, 1);
+    $editcheck=checkprivilege($menuprivilegearray, 7, 2);
+    $statuscheck=checkprivilege($menuprivilegearray, 7, 3);
+    $deletecheck=checkprivilege($menuprivilegearray, 7, 4);
+}
+else if($lastElement=='supplier.php'){
+    $addcheck=checkprivilege($menuprivilegearray, 8, 1);
+    $editcheck=checkprivilege($menuprivilegearray, 8, 2);
+    $statuscheck=checkprivilege($menuprivilegearray, 8, 3);
+    $deletecheck=checkprivilege($menuprivilegearray, 8, 4);
+}
+else if($lastElement=='porder.php'){
+    $addcheck=checkprivilege($menuprivilegearray, 9, 1);
+    $editcheck=checkprivilege($menuprivilegearray, 9, 2);
+    $statuscheck=checkprivilege($menuprivilegearray, 9, 3);
+    $deletecheck=checkprivilege($menuprivilegearray, 9, 4);
+}
+else if($lastElement=='grn.php'){
+    $addcheck=checkprivilege($menuprivilegearray, 10, 1);
+    $editcheck=checkprivilege($menuprivilegearray, 10, 2);
+    $statuscheck=checkprivilege($menuprivilegearray, 10, 3);
+    $deletecheck=checkprivilege($menuprivilegearray, 10, 4);
+}
+else if($lastElement=='invoiceview.php'){
+    $addcheck=checkprivilege($menuprivilegearray, 12, 1);
+    $editcheck=checkprivilege($menuprivilegearray, 12, 2);
+    $statuscheck=checkprivilege($menuprivilegearray, 12, 3);
+    $deletecheck=checkprivilege($menuprivilegearray, 12, 4);
+}
+else if($lastElement=='invoicepayment.php'){
+    $addcheck=checkprivilege($menuprivilegearray, 13, 1);
+    $editcheck=checkprivilege($menuprivilegearray, 13, 2);
+    $statuscheck=checkprivilege($menuprivilegearray, 13, 3);
+    $deletecheck=checkprivilege($menuprivilegearray, 13, 4);
+}
+else if($lastElement=='paymentreceipt.php'){
+    $addcheck=checkprivilege($menuprivilegearray, 14, 1);
+    $editcheck=checkprivilege($menuprivilegearray, 14, 2);
+    $statuscheck=checkprivilege($menuprivilegearray, 14, 3);
+    $deletecheck=checkprivilege($menuprivilegearray, 14, 4);
+}
+else if($lastElement=='customer.php'){
+    $addcheck=checkprivilege($menuprivilegearray, 15, 1);
+    $editcheck=checkprivilege($menuprivilegearray, 15, 2);
+    $statuscheck=checkprivilege($menuprivilegearray, 15, 3);
+    $deletecheck=checkprivilege($menuprivilegearray, 15, 4);
+}
+
+
+function checkprivilege($arraymenu, $menuID, $type){
+    foreach($arraymenu as $array){
+        if($array->menuid==$menuID){
+            if($type==1){
+                return $array->add;
+            }
+            else if($type==2){
+                return $array->edit;
+            }
+            else if($type==3){
+                return $array->statuschange;
+            }
+            else if($type==4){
+                return $array->remove;
+            }
+        }
+    }
+}
+?>
+<textarea class="d-none" id="actiontext"><?php echo $actionJSON; ?></textarea>
+<input type="hidden" id="userType" value="<?php echo $_SESSION['type']; ?>">
+<nav class="sidenav shadow-right sidenav-light">
+    <div class="sidenav-menu">
+        <div class="nav accordion" id="accordionSidenav">
+            <div class="sidenav-menu-heading">Core</div>
+            <a class="nav-link p-0 px-3 py-2" href="dashboard.php">
+                <div class="nav-link-icon"><i data-feather="activity"></i></div>
+                Dashboard
+            </a>
+            <a class="nav-link p-0 px-3 py-2" href="directsale.php">
+                <div class="nav-link-icon"><i data-feather="monitor"></i></div>
+                Direct sale
+            </a>
+            <?php if(menucheck($menuprivilegearray, 4)==1 | menucheck($menuprivilegearray, 5)==1 | menucheck($menuprivilegearray, 6)==1 | menucheck($menuprivilegearray, 7)==1){ ?>
+            <a class="nav-link p-0 px-3 py-2 collapsed" href="javascript:void(0);" data-toggle="collapse"
+                data-target="#collapseproduct" aria-expanded="false" aria-controls="collapseproduct">
+                <div class="nav-link-icon"><i data-feather="shopping-cart"></i></div>
+                Product
+                <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+            </a>
+            <div class="collapse <?php if($lastElement=="product.php" | $lastElement=="productcategory.php" | $lastElement=="groupcategory.php" | $lastElement=="subproductcategory.php"){echo 'show';} ?>"
+                id="collapseproduct" data-parent="#accordionSidenav">
+                <nav class="sidenav-menu-nested nav accordion" id="accordionSidenavPages">
+                    <?php if(menucheck($menuprivilegearray, 4)==1){ ?>
+                    <a class="nav-link p-0 px-3 py-1" href="product.php">Product</a>
+                    <?php }if(menucheck($menuprivilegearray, 5)==1){ ?>
+                    <a class="nav-link p-0 px-3 py-1" href="productcategory.php">Product Category</a>
+                    <?php }if(menucheck($menuprivilegearray, 6)==1){ ?>
+                    <a class="nav-link p-0 px-3 py-1" href="groupcategory.php">Product Group Category</a>
+                    <?php }if(menucheck($menuprivilegearray, 7)==1){ ?>
+                    <a class="nav-link p-0 px-3 py-1" href="subproductcategory.php">Product Sub Category</a>
+                    <?php } ?>
+                </nav>
+            </div>
+            <?php } if(menucheck($menuprivilegearray, 15)==1){ ?>
+            <a class="nav-link p-0 px-3 py-2" href="customer.php">
+                <div class="nav-link-icon"><i data-feather="users"></i></div>
+                Customers
+            </a>
+            <?php } if(menucheck($menuprivilegearray, 8)==1){ ?>
+            <a class="nav-link p-0 px-3 py-2" href="supplier.php">
+                <div class="nav-link-icon"><i data-feather="users"></i></div>
+                Supplier
+            </a>
+            <?php } if(menucheck($menuprivilegearray, 9)==1){ ?>
+            <a class="nav-link p-0 px-3 py-2" href="porder.php">
+                <div class="nav-link-icon"><i class="fas fa-truck"></i></div>
+                Porder
+            </a>
+            <?php } if(menucheck($menuprivilegearray, 10)==1){ ?>
+            <a class="nav-link p-0 px-3 py-2" href="grn.php">
+                <div class="nav-link-icon"><i class="fas fa-warehouse"></i></div>
+                Grn Info
+            </a>
+            <?php } if(menucheck($menuprivilegearray, 12)==1 | menucheck($menuprivilegearray, 13)==1 | menucheck($menuprivilegearray, 14)==1){ ?>
+            <a class="nav-link p-0 px-3 py-2 collapsed" href="javascript:void(0);" data-toggle="collapse"
+                data-target="#collapseinvoice" aria-expanded="false" aria-controls="collapseinvoice">
+                <div class="nav-link-icon"><i data-feather="file"></i></div>
+                Invoice
+                <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+            </a>
+            <div class="collapse <?php if($lastElement=="invoiceview.php" | $lastElement=="invoicepayment.php" | $lastElement=="paymentreceipt.php"){echo 'show';} ?>"
+                id="collapseinvoice" data-parent="#accordionSidenav">
+                <nav class="sidenav-menu-nested nav accordion" id="accordionSidenavPages">
+                    <?php if(menucheck($menuprivilegearray, 12)==1){ ?>
+                    <a class="nav-link p-0 px-3 py-1" href="invoiceview.php">Invoice View</a>
+                    <?php }if(menucheck($menuprivilegearray, 13)==1){ ?>
+                    <a class="nav-link p-0 px-3 py-1" href="invoicepayment.php">Invoice Payment</a>
+                    <?php }if(menucheck($menuprivilegearray, 14)==1){ ?>
+                    <a class="nav-link p-0 px-3 py-1" href="paymentreceipt.php">Payment Receipt</a>
+                    <?php } ?>
+                </nav>
+            </div>
+            <?php } if(menucheck($menuprivilegearray, 1)==1 | menucheck($menuprivilegearray, 2)==1 | menucheck($menuprivilegearray, 3)==1){ ?>
+            <a class="nav-link p-0 px-3 py-2 collapsed" href="javascript:void(0);" data-toggle="collapse"
+                data-target="#collapseUser" aria-expanded="false" aria-controls="collapseUser">
+                <div class="nav-link-icon"><i data-feather="user"></i></div>
+                User Account
+                <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+            </a>
+            <div class="collapse <?php if($lastElement=="useraccount.php" | $lastElement=="usertype.php" | $lastElement=="userprivilege.php"){echo 'show';} ?>"
+                id="collapseUser" data-parent="#accordionSidenav">
+                <nav class="sidenav-menu-nested nav accordion" id="accordionSidenavPages">
+                    <?php if(menucheck($menuprivilegearray, 1)==1){ ?>
+                    <a class="nav-link p-0 px-3 py-1" href="useraccount.php">User Account</a>
+                    <?php }if(menucheck($menuprivilegearray, 2)==1){ ?>
+                    <a class="nav-link p-0 px-3 py-1" href="usertype.php">Type</a>
+                    <?php }if(menucheck($menuprivilegearray, 3)==1){ ?>
+                    <a class="nav-link p-0 px-3 py-1" href="userprivilege.php">Privilege</a>
+                    <?php } ?>
+                </nav>
+            </div>
+            <?php } ?>
+        </div>
+    </div>
+    <div class="sidenav-footer bg-laugfs">
+        <div class="sidenav-footer-content">
+            <div class="sidenav-footer-subtitle">Logged in as:</div>
+            <div class="sidenav-footer-title"><?php echo ucfirst($_SESSION['name']); ?></div>
+        </div>
+    </div>
+</nav>
