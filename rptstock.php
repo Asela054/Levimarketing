@@ -1,9 +1,9 @@
 <?php 
 include "include/header.php"; 
 
-// Product list for the filter dropdown
-$sqlproduct = "SELECT `idtbl_product`, `product_name` FROM `tbl_product` WHERE `status` = 1 ORDER BY `product_name` ASC";
-$resultproduct = $conn->query($sqlproduct);
+// Category list for the filter dropdown
+$sqlcategory = "SELECT `idtbl_product_category`, `category` FROM `tbl_product_category` WHERE `status` = 1 ORDER BY `category` ASC";
+$resultcategory = $conn->query($sqlcategory);
 
 include "include/topnavbar.php"; 
 ?>
@@ -37,58 +37,26 @@ include "include/topnavbar.php";
                                 <form action="#" method="post" autocomplete="off" id="filterForm">
                                     <div class="form-row align-items-end">
 
-                                        <div class="col-auto">
-                                            <label class="small font-weight-bold text-dark mb-1">Filter By*</label><br>
-                                            <div class="custom-control custom-radio custom-control-inline">
-                                                <input type="radio" id="filterdate" name="filtertype" class="custom-control-input" value="date" checked>
-                                                <label class="custom-control-label" for="filterdate">Date</label>
-                                            </div>
-                                            <div class="custom-control custom-radio custom-control-inline">
-                                                <input type="radio" id="filterweek" name="filtertype" class="custom-control-input" value="week">
-                                                <label class="custom-control-label" for="filterweek">Week</label>
-                                            </div>
-                                            <div class="custom-control custom-radio custom-control-inline">
-                                                <input type="radio" id="filtermonth" name="filtertype" class="custom-control-input" value="month">
-                                                <label class="custom-control-label" for="filtermonth">Month</label>
-                                            </div>
-                                            <div class="custom-control custom-radio custom-control-inline">
-                                                <input type="radio" id="filterrange" name="filtertype" class="custom-control-input" value="range">
-                                                <label class="custom-control-label" for="filterrange">Date Range</label>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-auto" id="divsearchdate">
-                                            <label class="small font-weight-bold text-dark mb-1">Date</label>
-                                            <input type="date" class="form-control form-control-sm" id="date" value="<?php echo date('Y-m-d'); ?>">
-                                        </div>
-
-                                        <div class="col-auto d-none" id="divsearchweek">
-                                            <label class="small font-weight-bold text-dark mb-1">Week</label>
-                                            <input type="week" class="form-control form-control-sm" id="week">
-                                        </div>
-
-                                        <div class="col-auto d-none" id="divsearchmonth">
-                                            <label class="small font-weight-bold text-dark mb-1">Month</label>
-                                            <input type="month" class="form-control form-control-sm" id="month">
-                                        </div>
-
-                                        <div class="col-auto d-none" id="divsearchfromdate">
-                                            <label class="small font-weight-bold text-dark mb-1">From Date</label>
-                                            <input type="date" class="form-control form-control-sm" id="date_from">
-                                        </div>
-                                        <div class="col-auto d-none" id="divsearchtodate">
-                                            <label class="small font-weight-bold text-dark mb-1">To Date</label>
-                                            <input type="date" class="form-control form-control-sm" id="date_to">
-                                        </div>
-
                                         <div class="col-auto" style="min-width: 220px;">
-                                            <label class="small font-weight-bold text-dark mb-1">Product</label>
-                                            <select class="form-control form-control-sm selecter2 px-0" id="filterproduct">
-                                                <option value="">All Products</option>
-                                                <?php if ($resultproduct->num_rows > 0) { while ($rowproduct = $resultproduct->fetch_assoc()) { ?>
-                                                <option value="<?php echo $rowproduct['idtbl_product']; ?>"><?php echo $rowproduct['product_name']; ?></option>
+                                            <label class="small font-weight-bold text-dark mb-1">Category</label>
+                                            <select class="form-control form-control-sm" id="filtercategory" style="width:100%;">
+                                                <option value="">All Categories</option>
+                                                <?php if ($resultcategory->num_rows > 0) { while ($rowcategory = $resultcategory->fetch_assoc()) { ?>
+                                                <option value="<?php echo $rowcategory['idtbl_product_category']; ?>"><?php echo $rowcategory['category']; ?></option>
                                                 <?php }} ?>
                                             </select>
+                                        </div>
+
+                                        <div class="col-auto" style="min-width: 260px;">
+                                            <label class="small font-weight-bold text-dark mb-1">Product</label>
+                                            <select class="form-control form-control-sm" id="filterproduct" style="width:100%;">
+                                                <option value="">All Products</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-auto" style="min-width: 240px;">
+                                            <label class="small font-weight-bold text-dark mb-1">Search Product Name</label>
+                                            <input type="text" class="form-control form-control-sm" id="filterkeyword" placeholder="Type any keyword...">
                                         </div>
 
                                         <div class="col-auto">
@@ -139,8 +107,31 @@ var stockDetailTable;
 
 $(document).ready(function () {
 
-    $('#filterproduct').select2({
+    $('#filtercategory').select2({
         width: '100%'
+    });
+
+    $('#filterproduct').select2({
+        width: '100%',
+        placeholder: 'All Products',
+        allowClear: true,
+        ajax: {
+            url: 'getprocess/getproductselect2.php',
+            type: 'POST',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    searchTerm: params.term
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: data
+                };
+            },
+            cache: true
+        }
     });
 
     stockDetailTable = $('#stockDetailTable').DataTable( {
@@ -151,20 +142,9 @@ $(document).ready(function () {
             url: "scripts/stocklist.php",
             type: "POST",
             "data": function ( d ) {
-                var filtertype = $('input[name="filtertype"]:checked').val();
-
-                if (filtertype === 'date') {
-                    d.search_date = $('#date').val();
-                } else if (filtertype === 'week') {
-                    d.search_week = $('#week').val();
-                } else if (filtertype === 'month') {
-                    d.search_month = $('#month').val();
-                } else if (filtertype === 'range') {
-                    d.search_from_date = $('#date_from').val();
-                    d.search_to_date = $('#date_to').val();
-                }
-
+                d.search_category = $('#filtercategory').val();
                 d.search_product = $('#filterproduct').val();
+                d.search_keyword = $('#filterkeyword').val();
             }
         },
         "order": [
@@ -280,32 +260,22 @@ $(document).ready(function () {
         }
     } );
 
-    // Toggle date-type inputs
-    $('input[name="filtertype"]').change(function() {
-        $('#divsearchdate, #divsearchweek, #divsearchmonth, #divsearchfromdate, #divsearchtodate').addClass('d-none');
-
-        var filtertype = $(this).val();
-        if (filtertype === 'date') {
-            $('#divsearchdate').removeClass('d-none');
-        } else if (filtertype === 'week') {
-            $('#divsearchweek').removeClass('d-none');
-        } else if (filtertype === 'month') {
-            $('#divsearchmonth').removeClass('d-none');
-        } else if (filtertype === 'range') {
-            $('#divsearchfromdate, #divsearchtodate').removeClass('d-none');
-        }
-    });
-
     $('#btnSearch').click(function() {
         stockDetailTable.ajax.reload();
     });
 
+    // Also trigger search on Enter inside the keyword box
+    $('#filterkeyword').on('keyup', function(e) {
+        if (e.key === 'Enter') {
+            stockDetailTable.ajax.reload();
+        }
+    });
+
     $('#btnResetFilter').click(function() {
         $('#filterForm')[0].reset();
-        $('#filterdate').prop('checked', true).trigger('change');
-        $('#date').val(today);
+        $('#filtercategory').val(null).trigger('change');
         $('#filterproduct').val(null).trigger('change');
-        $('#filterlocation').val(null).trigger('change');
+        $('#filterkeyword').val('');
         stockDetailTable.ajax.reload();
     });
 });
