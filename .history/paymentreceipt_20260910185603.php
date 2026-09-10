@@ -101,18 +101,6 @@ include "include/topnavbar.php";
                     }
                 },
                 {
-                    "targets": -1,
-                    "className": "",
-                    "data": null,
-                    "render": function(data, type, full) {
-                        if (full['invtype'] == 1) {
-                            return full['taxinvoice_no'];
-                        } else {
-                            return 'INV-' + full['manuelinvno'];
-                        }
-                    }
-                },
-                {
                     "data": "date"
                 },
                 {

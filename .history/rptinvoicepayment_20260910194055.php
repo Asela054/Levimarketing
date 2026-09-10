@@ -20,7 +20,7 @@ include "include/topnavbar.php";
                         <div class="row">
                             <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12">
                                 <h1 class="page-header-title">
-                                    <span class="bi bi-receipt-cutoff">&nbsp; Payment Receipt</span>
+                                    <span class="bi bi-receipt">&nbsp; Invoice Payment</span>
                                 </h1>
                             </div>
                         </div>
@@ -118,22 +118,24 @@ include "include/topnavbar.php";
                                 <tr>
                                     <th>PAYMENT ID</th>
                                     <th>INVOICE ID</th>
-                                    <th>DATE</th>
                                     <th>CUSTOMER</th>
-                                    <th>PAYMENT METHOD</th>
-                                    <th>BANK</th>
-                                    <th>RECEIPT NO</th>
-                                    <th>CHEQUE NO</th>
-                                    <th>CHEQUE DATE</th>
+                                    <th>DATE</th>
+                                    <th>TOTAL</th>
+                                    <th>DISCOUNT</th>
+                                    <th>PAYAMOUNT</th>
                                     <th>PAYMENT</th>
+                                    <th>BALANCE</th>
                                 </tr>
                                 </thead>
                                 <tbody>
                                 </tbody>
                                 <tfoot>
                                 <tr>
-                                    <th colspan="9"></th>
+                                    <th colspan="5"></th>
                                     <th style="text-align:right">Total:</th>
+                                    <th class="text-right"></th>
+                                    <th class="text-right"></th>
+                                    <th class="text-right"></th>
                                 </tr>
                                 </tfoot>
                             </table>
@@ -142,6 +144,7 @@ include "include/topnavbar.php";
                 </div>
             </div>
         </main>
+
         <?php include "include/footerbar.php"; ?>
     </div>
 </div>
@@ -150,7 +153,7 @@ include "include/topnavbar.php";
 <script>
 
 let today = new Date().toISOString().slice(0, 10)
-var receiptDetailTable;
+var invoiceDetailTable;
 
 $(document).ready(function () {
 
@@ -160,12 +163,12 @@ $(document).ready(function () {
         allowClear: true
     });
 
-    receiptDetailTable = $('#invoiceDetailTable').DataTable( {
+    invoiceDetailTable = $('#invoiceDetailTable').DataTable( {
         "destroy": true,
         "processing": true,
         "serverSide": true,
         ajax: {
-            url: "scripts/paymentreciptlist.php",
+            url: "scripts/invoicepaymentlist.php",
             type: "POST",
             "data": function ( d ) {
                 var filtertype = $('input[name="filtertype"]:checked').val();
@@ -205,32 +208,35 @@ $(document).ready(function () {
                     return data;
                 }
             },
+            {
+                "data": "customername",
+                "render": function (data, type, full) {
+                    return data ? data : '-';
+                }
+            },
             { "data": "date" },
             {
-                "data": "name",
-                "render": function (data, type, full) {
-                    return data ? data : '-';
-                }
+                "data": "total",
+                "className": 'text-right',
+                render: $.fn.dataTable.render.number(',', '.', 2, '')
             },
             {
-                "data": "method",
-                "render": function (data, type, full) {
-                    if (type !== 'display') { return data; }
-                    var labels = { 1: 'Cash', 2: 'Cheque', 3: 'Card', 4: 'Online Transfer' };
-                    return labels[data] ? labels[data] : '-';
-                }
+                "data": "discount",
+                "className": 'text-right',
+                render: $.fn.dataTable.render.number(',', '.', 2, '')
             },
             {
-                "data": "bank",
-                "render": function (data, type, full) {
-                    return data ? data : '-';
-                }
+                "data": "payamount",
+                "className": 'text-right',
+                render: $.fn.dataTable.render.number(',', '.', 2, '')
             },
-            { "data": "receiptno" },
-            { "data": "chequeno" },
-            { "data": "chequedate" },
             {
-                "data": "amount",
+                "data": "payment",
+                "className": 'text-right',
+                render: $.fn.dataTable.render.number(',', '.', 2, '')
+            },
+            {
+                "data": "balance",
                 "className": 'text-right',
                 render: $.fn.dataTable.render.number(',', '.', 2, '')
             }
@@ -247,9 +253,9 @@ $(document).ready(function () {
                 className: 'btn btn-primary btn-sm',
                 text: '<i class="fas fa-file-pdf mr-2"></i> PDF',
                 title: 'Levi Marketing Pvt Ltd',
-                filename: 'Payment Receipt Report'+today,
+                filename: 'Invoice Payment Report'+today,
                 footer: true,
-                messageTop: { text: 'Payment Receipt Report',
+                messageTop: { text: 'Invoice Payment Report',
                     fontSize: 15,
                     bold: true,
                     alignment: 'center' },
@@ -264,14 +270,14 @@ $(document).ready(function () {
             {
                 extend: 'excel',
                 className: 'btn btn-success btn-sm',
-                filename: 'Payment Receipt Report'+today,
+                filename: 'Invoice Payment Report'+today,
                 text: '<i class="fas fa-file-excel mr-2"></i> EXCEL',
                 footer: true
             },
             {
                 extend: 'csv',
                 className: 'btn btn-info btn-sm',
-                filename: 'Payment Receipt Report'+today,
+                filename: 'Invoice Payment Report'+today,
                 text: '<i class="fas fa-file-csv mr-2"></i> CSV',
                 footer: true
             },
@@ -280,12 +286,9 @@ $(document).ready(function () {
                 className: 'btn btn-warning btn-sm',
                 text: '<i class="fas fa-print mr-2"></i> PRINT',
                 title: 'Levi Marketing Pvt Ltd',
-                filename: 'Payment Receipt Report'+today,
+                filename: 'Invoice Payment Report'+today,
                 footer: true,
-                messageTop: { text: 'Payment Receipt Report',
-                    fontSize: 15,
-                    bold: true,
-                    alignment: 'center' },
+                messageTop: 'Invoice Payment Report',
                 customize: function (doc) {
                     doc.styles.title = {
                         color: 'black',
@@ -305,14 +308,32 @@ $(document).ready(function () {
                         i : 0;
             };
 
-            var pageTotal = api
-                .column( 9, { page: 'current'} )
+            // Payamount total (column 6) over the current page
+            var payamount_pageTotal = api
+                .column( 6, { page: 'current'} )
                 .data()
                 .reduce( function (a, b) {
                     return intVal(a) + intVal(b);
                 }, 0 );
+            $( api.column( 6 ).footer() ).html( 'Rs ' + payamount_pageTotal.toFixed(2) );
 
-            $( api.column( 9 ).footer() ).html( 'Rs ' + pageTotal.toFixed(2) );
+            // Payment total (column 7) over the current page
+            var payment_pageTotal = api
+                .column( 7, { page: 'current'} )
+                .data()
+                .reduce( function (a, b) {
+                    return intVal(a) + intVal(b);
+                }, 0 );
+            $( api.column( 7 ).footer() ).html( 'Rs ' + payment_pageTotal.toFixed(2) );
+
+            // Balance total (column 8) over the current page
+            var balance_pageTotal = api
+                .column( 8, { page: 'current'} )
+                .data()
+                .reduce( function (a, b) {
+                    return intVal(a) + intVal(b);
+                }, 0 );
+            $( api.column( 8 ).footer() ).html( 'Rs ' + balance_pageTotal.toFixed(2) );
         },
         drawCallback: function (settings) {
             $('[data-toggle="tooltip"]').tooltip();
@@ -336,7 +357,7 @@ $(document).ready(function () {
     });
 
     $('#btnSearch').click(function() {
-        receiptDetailTable.ajax.reload();
+        invoiceDetailTable.ajax.reload();
     });
 
     $('#btnResetFilter').click(function() {
@@ -345,8 +366,9 @@ $(document).ready(function () {
         $('#date').val(today);
         $('#filtercustomer').val(null).trigger('change');
         $('#filterpaymentmethod').val('');
-        receiptDetailTable.ajax.reload();
+        invoiceDetailTable.ajax.reload();
     });
 });
 </script>
+
 <?php include "include/footer.php"; ?>

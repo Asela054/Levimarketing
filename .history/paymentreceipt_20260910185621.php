@@ -108,7 +108,7 @@ include "include/topnavbar.php";
                         if (full['invtype'] == 1) {
                             return full['taxinvoice_no'];
                         } else {
-                            return 'INV-' + full['manuelinvno'];
+                            return 'INV-' + full['id'];
                         }
                     }
                 },

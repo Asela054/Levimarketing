@@ -189,13 +189,7 @@ $(document).ready(function () {
             [0, "desc"]
         ],
         "columns": [
-            {
-                "className": '',
-                "data": null,
-                "render": function(data, type, full) {
-                    return 'PR-'+full['idtbl_invoice_payment'];
-                }
-            },
+            { "data": "idtbl_invoice_payment" },
             {
                 "data": "invoiceno",
                 "render": function (data, type, full) {

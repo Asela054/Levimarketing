@@ -36,7 +36,7 @@ $columns = array(
     array( 'db' => '`ub`.`manuelinvno`', 'dt' => 'id', 'field' => 'manuelinvno' ),
     array( 'db' => '`ub`.`taxinvoice_no`', 'dt' => 'taxinvoice_no', 'field' => 'taxinvoice_no' ),
 	array( 'db' => $invoiceNoExpr,                'dt' => 'invoiceno',            'field' => 'invoiceno', 'as' => 'invoiceno' ),
-    array( 'db' => '`ub`.`invtype`', 'dt' => 'invtype', 'field' => 'invtype' ),
+        array( 'db' => '`u`.`invtype`', 'dt' => 'invtype', 'field' => 'invtype' ),
 	array( 'db' => '`u`.`date`',                  'dt' => 'date',                 'field' => 'date' ),
 	array( 'db' => '`ue`.`name`',                 'dt' => 'name',                 'field' => 'name' ),
 	array( 'db' => '`uc`.`method`',               'dt' => 'method',               'field' => 'method' ),

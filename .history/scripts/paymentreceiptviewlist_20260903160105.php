@@ -34,9 +34,6 @@ $primaryKey = 'idtbl_invoice_payment';
 // indexes
 $columns = array(
 	array( 'db' => '`u`.`idtbl_invoice_payment`', 'dt' => 'idtbl_invoice_payment', 'field' => 'idtbl_invoice_payment' ),
-    array( 'db' => '`i`.`invtype`',              'dt' => 'invtype',              'field' => 'invtype' ),
-    array( 'db' => '`i`.`manuelinvno`',          'dt' => 'manuelinvno',          'field' => 'manuelinvno' ),
-    array( 'db' => '`i`.`taxinvoice_no`',        'dt' => 'taxinvoice_no',        'field' => 'taxinvoice_no' ),
 	array( 'db' => '`u`.`date`', 'dt' => 'date', 'field' => 'date' ),
 	array( 'db' => '`u`.`payment`', 'dt' => 'payment', 'field' => 'payment' ),
 	array( 'db' => '`u`.`balance`', 'dt' => 'balance', 'field' => 'balance' ),

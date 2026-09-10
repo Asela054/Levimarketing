@@ -33,10 +33,8 @@ $invoiceNoExpr = "COALESCE(NULLIF(`ub`.`taxinvoice_no`, ''), `ub`.`manuelinvno`,
 
 $columns = array(
 	array( 'db' => '`u`.`idtbl_invoice_payment`', 'dt' => 'idtbl_invoice_payment', 'field' => 'idtbl_invoice_payment' ),
-    array( 'db' => '`ub`.`manuelinvno`', 'dt' => 'id', 'field' => 'manuelinvno' ),
-    array( 'db' => '`ub`.`taxinvoice_no`', 'dt' => 'taxinvoice_no', 'field' => 'taxinvoice_no' ),
+    array( 'db' => '`ud`.`manuelinvno`', 'dt' => 'id', 'field' => 'manuelinvno' ),
 	array( 'db' => $invoiceNoExpr,                'dt' => 'invoiceno',            'field' => 'invoiceno', 'as' => 'invoiceno' ),
-    array( 'db' => '`ub`.`invtype`', 'dt' => 'invtype', 'field' => 'invtype' ),
 	array( 'db' => '`u`.`date`',                  'dt' => 'date',                 'field' => 'date' ),
 	array( 'db' => '`ue`.`name`',                 'dt' => 'name',                 'field' => 'name' ),
 	array( 'db' => '`uc`.`method`',               'dt' => 'method',               'field' => 'method' ),

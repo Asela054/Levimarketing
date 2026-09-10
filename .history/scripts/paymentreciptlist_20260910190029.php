@@ -19,6 +19,10 @@ session_start();
  *    foreign key idtbl_invoice, matching the other invoice-related reports.
  * 3. Added Customer + Payment Method filters, using the `ue`/`uc` joins that
  *    were already present but only used for display, not filtering.
+ * 4. Added `invtype` to $columns - the frontend needs this to decide whether
+ *    to show the tax invoice number or the manual (INV-) invoice number.
+ *    Without it, full['invtype'] was always undefined on the client, so the
+ *    manual-invoice branch always ran and showed "undefined"/blank values.
  */
 
 $table = 'tbl_invoice_payment';
@@ -33,10 +37,10 @@ $invoiceNoExpr = "COALESCE(NULLIF(`ub`.`taxinvoice_no`, ''), `ub`.`manuelinvno`,
 
 $columns = array(
 	array( 'db' => '`u`.`idtbl_invoice_payment`', 'dt' => 'idtbl_invoice_payment', 'field' => 'idtbl_invoice_payment' ),
-    array( 'db' => '`ub`.`manuelinvno`', 'dt' => 'id', 'field' => 'manuelinvno' ),
-    array( 'db' => '`ub`.`taxinvoice_no`', 'dt' => 'taxinvoice_no', 'field' => 'taxinvoice_no' ),
+    array( 'db' => '`ub`.`invtype`',              'dt' => 'invtype',              'field' => 'invtype' ),
+    array( 'db' => '`ub`.`manuelinvno`',          'dt' => 'manuelinvno',          'field' => 'manuelinvno' ),
+    array( 'db' => '`ub`.`taxinvoice_no`',        'dt' => 'taxinvoice_no',        'field' => 'taxinvoice_no' ),
 	array( 'db' => $invoiceNoExpr,                'dt' => 'invoiceno',            'field' => 'invoiceno', 'as' => 'invoiceno' ),
-    array( 'db' => '`ub`.`invtype`', 'dt' => 'invtype', 'field' => 'invtype' ),
 	array( 'db' => '`u`.`date`',                  'dt' => 'date',                 'field' => 'date' ),
 	array( 'db' => '`ue`.`name`',                 'dt' => 'name',                 'field' => 'name' ),
 	array( 'db' => '`uc`.`method`',               'dt' => 'method',               'field' => 'method' ),

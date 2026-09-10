@@ -1,6 +1,10 @@
 <?php 
 include "include/header.php"; 
 
+// Product list for the filter dropdown
+$sqlproduct = "SELECT `idtbl_product`, `product_name` FROM `tbl_product` WHERE `status` = 1 ORDER BY `product_name` ASC";
+$resultproduct = $conn->query($sqlproduct);
+
 // Category list for the filter dropdown
 $sqlcategory = "SELECT `idtbl_product_category`, `category` FROM `tbl_product_category` WHERE `status` = 1 ORDER BY `category` ASC";
 $resultcategory = $conn->query($sqlcategory);
@@ -39,7 +43,7 @@ include "include/topnavbar.php";
 
                                         <div class="col-auto" style="min-width: 220px;">
                                             <label class="small font-weight-bold text-dark mb-1">Category</label>
-                                            <select class="form-control form-control-sm" id="filtercategory" style="width:100%;">
+                                            <select class="form-control form-control-sm selecter2 px-0" id="filtercategory">
                                                 <option value="">All Categories</option>
                                                 <?php if ($resultcategory->num_rows > 0) { while ($rowcategory = $resultcategory->fetch_assoc()) { ?>
                                                 <option value="<?php echo $rowcategory['idtbl_product_category']; ?>"><?php echo $rowcategory['category']; ?></option>
@@ -47,10 +51,13 @@ include "include/topnavbar.php";
                                             </select>
                                         </div>
 
-                                        <div class="col-auto" style="min-width: 260px;">
+                                        <div class="col-auto" style="min-width: 220px;">
                                             <label class="small font-weight-bold text-dark mb-1">Product</label>
-                                            <select class="form-control form-control-sm" id="filterproduct" style="width:100%;">
+                                            <select class="form-control form-control-sm selecter2 px-0" id="filterproduct">
                                                 <option value="">All Products</option>
+                                                <?php if ($resultproduct->num_rows > 0) { while ($rowproduct = $resultproduct->fetch_assoc()) { ?>
+                                                <option value="<?php echo $rowproduct['idtbl_product']; ?>"><?php echo $rowproduct['product_name']; ?></option>
+                                                <?php }} ?>
                                             </select>
                                         </div>
 
@@ -107,31 +114,31 @@ var stockDetailTable;
 
 $(document).ready(function () {
 
+        $('#product').select2({
+            dropdownParent: $('#modalcreateorder'),
+            width: '100%',
+            placeholder: 'Select Product',
+            ajax: {
+                url: 'getprocess/getproductselect2.php',
+                type: 'POST',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return {
+                        searchTerm: params.term
+                    };
+                },
+                processResults: function (data) {
+                    return {
+                        results: data
+                    };
+                },
+                cache: true
+            }
+        });
+
     $('#filtercategory').select2({
         width: '100%'
-    });
-
-    $('#filterproduct').select2({
-        width: '100%',
-        placeholder: 'All Products',
-        allowClear: true,
-        ajax: {
-            url: 'getprocess/getproductselect2.php',
-            type: 'POST',
-            dataType: 'json',
-            delay: 250,
-            data: function (params) {
-                return {
-                    searchTerm: params.term
-                };
-            },
-            processResults: function (data) {
-                return {
-                    results: data
-                };
-            },
-            cache: true
-        }
     });
 
     stockDetailTable = $('#stockDetailTable').DataTable( {

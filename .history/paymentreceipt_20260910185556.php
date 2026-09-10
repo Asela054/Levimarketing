@@ -36,7 +36,7 @@ include "include/topnavbar.php";
                                     <thead>
                                         <tr>
                                             <th>Receipt No</th>
-                                            <th>Invoice Number</th>
+                                            <th
                                             <th>Date</th>
                                             <th class="text-right">Payment</th>
                                             <th class="text-right">Balance</th>
@@ -98,18 +98,6 @@ include "include/topnavbar.php";
                     "data": null,
                     "render": function(data, type, full) {
                         return 'PR-'+full['idtbl_invoice_payment'];
-                    }
-                },
-                {
-                    "targets": -1,
-                    "className": "",
-                    "data": null,
-                    "render": function(data, type, full) {
-                        if (full['invtype'] == 1) {
-                            return full['taxinvoice_no'];
-                        } else {
-                            return 'INV-' + full['manuelinvno'];
-                        }
                     }
                 },
                 {

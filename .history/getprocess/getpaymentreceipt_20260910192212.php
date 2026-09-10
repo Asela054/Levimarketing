@@ -25,7 +25,7 @@ $companyTel = implode(' / ', array_filter([
 $companyEmail = $company['email'] ?? '';
 $companyTin   = '103464978'; // Supplier's TIN
 
-$sqlpaymentdetail="SELECT `tbl_invoice_payment_has_tbl_invoice`.*, `tbl_invoice`.`invtype`, `tbl_invoice`.`manuelinvno`, `tbl_invoice`.`taxinvoice_no`, `tbl_invoice`.`total` AS `invoicetotal` FROM `tbl_invoice_payment_has_tbl_invoice` LEFT JOIN `tbl_invoice` ON `tbl_invoice`.`idtbl_invoice`=`tbl_invoice_payment_has_tbl_invoice`.`tbl_invoice_idtbl_invoice` WHERE `tbl_invoice_payment_has_tbl_invoice`.`tbl_invoice_payment_idtbl_invoice_payment`='$paymentinoiceID'";
+$sqlpaymentdetail="SELECT `tbl_invoice_payment_has_tbl_invoice`.*, `tbl_invoice`.`manuelinvno`, `tbl_invoice`.`total` AS `invoicetotal` FROM `tbl_invoice_payment_has_tbl_invoice` LEFT JOIN `tbl_invoice` ON `tbl_invoice`.`idtbl_invoice`=`tbl_invoice_payment_has_tbl_invoice`.`tbl_invoice_idtbl_invoice` WHERE `tbl_invoice_payment_has_tbl_invoice`.`tbl_invoice_payment_idtbl_invoice_payment`='$paymentinoiceID'";
 $resultpaymentdetail=$conn->query($sqlpaymentdetail);
 
 $sqlpayment="SELECT * FROM `tbl_invoice_payment` WHERE `idtbl_invoice_payment`='$paymentinoiceID' AND `status`=1";
@@ -74,11 +74,7 @@ $resultpaymentbank=$conn->query($sqlpaymentbank);
             </thead>
             <tbody>
                 <?php $i=1;while($rowpaymentdetail=$resultpaymentdetail->fetch_assoc()){ 
-                    if ($rowpaymentdetail['invtype'] == 1) {
-                        $displayinvno = $rowpaymentdetail['taxinvoice_no'];
-                    } else {
-                        $displayinvno = 'INV-'.(!empty($rowpaymentdetail['manuelinvno']) ? $rowpaymentdetail['manuelinvno'] : $rowpaymentdetail['tbl_invoice_idtbl_invoice']);
-                    }
+                    $displayinvno = 'INV-'.(!empty($rowpaymentdetail['manuelinvno']) ? $rowpaymentdetail['manuelinvno'] : $rowpaymentdetail['tbl_invoice_idtbl_invoice']);
                 ?>
                 <tr>
                     <td><?php echo $i ?></td>

@@ -24,9 +24,6 @@ $sql_details = array(
 	'host' => $db_host 
 ); 
 
-// Local mysqli connection just for safely escaping the keyword search below 
-$escConn = new mysqli($db_host, $db_username, $db_password, $db_name); 
-
 require('ssp.customized.class.php'); 
 
 // u  = tbl_stock 
@@ -54,8 +51,8 @@ if (!empty($_POST['search_product'])) {
 // Keyword search - match product name anywhere (LIKE %keyword%) 
 if (!empty($_POST['search_keyword'])) { 
     $keyword = trim($_POST['search_keyword']); 
-    if ($keyword !== '' && !$escConn->connect_error) { 
-        $keyword_esc = $escConn->real_escape_string($keyword); 
+    if ($keyword !== '') { 
+        $keyword_esc = $conn->real_escape_string($keyword); 
         $extraWhere .= " AND `ud`.`product_name` LIKE '%" . $keyword_esc . "%'"; 
     } 
 } 
@@ -67,6 +64,4 @@ if (!empty($locationId)) {
 
 echo json_encode( 
 	SSP::simple( $_POST, $sql_details, $table, $primaryKey, $columns, $joinQuery, $extraWhere ) 
-); 
-
-$escConn->close();
+);
