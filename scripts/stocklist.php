@@ -12,7 +12,8 @@ $columns = array(
 	array( 'db' => '`u`.`update`',        'dt' => 'update',        'field' => 'update' ), 
 	array( 'db' => '`u`.`status`',        'dt' => 'status',        'field' => 'status' ), 
 	array( 'db' => '`ud`.`product_name`', 'dt' => 'product_name',  'field' => 'product_name' ), 
-	array( 'db' => '`uc`.`location`',     'dt' => 'location',      'field' => 'location' ) 
+	array( 'db' => '`uc`.`location`',     'dt' => 'location',      'field' => 'location' ),
+	array( 'db' => '`ud`.`unitprice`',    'dt' => 'unitprice',     'field' => 'unitprice' )
 ); 
 
 // SQL server connection information 
@@ -30,7 +31,7 @@ $escConn = new mysqli($db_host, $db_username, $db_password, $db_name);
 require('ssp.customized.class.php'); 
 
 // u  = tbl_stock 
-// ud = tbl_product   (product name / category) 
+// ud = tbl_product   (product name / category / unitprice) 
 // uc = tbl_location  (location name) 
 $joinQuery = "FROM `tbl_stock` AS `u` 
     LEFT JOIN `tbl_product` AS `ud` ON (`ud`.`idtbl_product` = `u`.`tbl_product_idtbl_product`) 
