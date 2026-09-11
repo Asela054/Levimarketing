@@ -70,30 +70,28 @@ include "include/topnavbar.php";
                         <hr class="border-dark">
 
                         <div class="scrollbar pb-3" id="style-2">
-                            <table class="table table-striped table-bordered table-sm nowrap" id="stockDetailTable" style="width:100%">
-                                <thead class="thead-light">
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Product Name</th>
-                                        <th>Location</th>
-                                        <th class="text-right">Qty</th>
-                                        <th class="text-right">Unit Price</th>
-                                        <th class="text-right">Total</th>
-                                        <th>Last Updated</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <th colspan="3" class="text-right">Total Qty:</th>
-                                        <th class="text-right"></th>
-                                        <th class="text-right"></th>
-                                        <th class="text-right">Grand Total:</th>
-                                        <th></th>
-                                    </tr>
-                                </tfoot>
-                            </table>
+                            <thead class="thead-light">
+    <tr>
+        <th>ID</th>
+        <th>Product Name</th>
+        <th>Location</th>
+        <th class="text-right">Qty</th>
+        <th class="text-right">Unit Price</th>
+        <th class="text-right">Total</th>
+        <th>Last Updated</th>
+    </tr>
+</thead>
+<tbody>
+</tbody>
+<tfoot>
+    <tr>
+        <th colspan="3" class="text-right">Total Qty:</th>
+        <th class="text-right"></th>
+        <th class="text-right"></th>
+        <th class="text-right">Grand Total:</th>
+        <th></th>
+    </tr>
+</tfoot>
                         </div>
                     </div>
                 </div>
@@ -178,25 +176,6 @@ $(document).ready(function () {
                 "data": "qty",
                 "className": 'text-right'
             },
-            {
-                "targets": -1,
-                "className": 'text-right',
-                "data": "unitprice",
-                "render": function (data, type, full) {
-                    var price = parseFloat(data) || 0;
-                    return addCommas(price.toFixed(2));
-                }
-            },
-            {
-                "targets": -1,
-                "className": 'text-right',
-                "data": null,
-                "render": function (data, type, full) {
-                    var qty   = parseFloat(full['qty']) || 0;
-                    var price = parseFloat(full['unitprice']) || 0;
-                    return addCommas((qty * price).toFixed(2));
-                }
-            },
             { "data": "update" }
         ],
         dom: "<'row'<'col-sm-4'B><'col-sm-3'l><'col-sm-5'f>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
@@ -269,7 +248,6 @@ $(document).ready(function () {
                         i : 0;
             };
 
-            // Qty is now column index 3 (unchanged position)
             var qtyPageTotal = api
                 .column( 3, { page: 'current'} )
                 .data()
@@ -278,16 +256,6 @@ $(document).ready(function () {
                 }, 0 );
 
             $( api.column( 3 ).footer() ).html( qtyPageTotal );
-
-            // Total is the new column, now at index 5
-            var totalPageTotal = api
-                .column( 5, { page: 'current'} )
-                .data()
-                .reduce( function (a, b) {
-                    return intVal(a) + intVal(b);
-                }, 0 );
-
-            $( api.column( 5 ).footer() ).html( addCommas(totalPageTotal.toFixed(2)) );
         },
         drawCallback: function (settings) {
             $('[data-toggle="tooltip"]').tooltip();
@@ -313,18 +281,6 @@ $(document).ready(function () {
         stockDetailTable.ajax.reload();
     });
 });
-
-function addCommas(nStr){
-    nStr += '';
-    var x = nStr.split('.');
-    var x1 = x[0];
-    var x2 = x.length > 1 ? '.' + x[1] : '';
-    var rgx = /(\d+)(\d{3})/;
-    while (rgx.test(x1)) {
-        x1 = x1.replace(rgx, '$1' + ',' + '$2');
-    }
-    return x1 + x2;
-}
 </script>
 
 <?php include "include/footer.php"; ?>

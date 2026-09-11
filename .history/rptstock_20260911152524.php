@@ -259,36 +259,36 @@ $(document).ready(function () {
                 }
             }
         ],
-        footerCallback : function ( row, data, start, end, display ) {
-            var api = this.api();
+            footerCallback : function ( row, data, start, end, display ) {
+                var api = this.api();
 
-            var intVal = function ( i ) {
-                return typeof i === 'string' ?
-                    i.replace(/[\$,]/g, '')*1 :
-                    typeof i === 'number' ?
-                        i : 0;
-            };
+                var intVal = function ( i ) {
+                    return typeof i === 'string' ?
+                        i.replace(/[\$,]/g, '')*1 :
+                        typeof i === 'number' ?
+                            i : 0;
+                };
 
-            // Qty is now column index 3 (unchanged position)
-            var qtyPageTotal = api
-                .column( 3, { page: 'current'} )
-                .data()
-                .reduce( function (a, b) {
-                    return intVal(a) + intVal(b);
-                }, 0 );
+                // Qty is now column index 3 (unchanged position)
+                var qtyPageTotal = api
+                    .column( 3, { page: 'current'} )
+                    .data()
+                    .reduce( function (a, b) {
+                        return intVal(a) + intVal(b);
+                    }, 0 );
 
-            $( api.column( 3 ).footer() ).html( qtyPageTotal );
+                $( api.column( 3 ).footer() ).html( qtyPageTotal );
 
-            // Total is the new column, now at index 5
-            var totalPageTotal = api
-                .column( 5, { page: 'current'} )
-                .data()
-                .reduce( function (a, b) {
-                    return intVal(a) + intVal(b);
-                }, 0 );
+                // Total is the new column, now at index 5
+                var totalPageTotal = api
+                    .column( 5, { page: 'current'} )
+                    .data()
+                    .reduce( function (a, b) {
+                        return intVal(a) + intVal(b);
+                    }, 0 );
 
-            $( api.column( 5 ).footer() ).html( addCommas(totalPageTotal.toFixed(2)) );
-        },
+                $( api.column( 5 ).footer() ).html( addCommas(totalPageTotal.toFixed(2)) );
+            },
         drawCallback: function (settings) {
             $('[data-toggle="tooltip"]').tooltip();
         }

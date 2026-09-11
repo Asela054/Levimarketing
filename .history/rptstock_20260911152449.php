@@ -269,7 +269,6 @@ $(document).ready(function () {
                         i : 0;
             };
 
-            // Qty is now column index 3 (unchanged position)
             var qtyPageTotal = api
                 .column( 3, { page: 'current'} )
                 .data()
@@ -278,16 +277,6 @@ $(document).ready(function () {
                 }, 0 );
 
             $( api.column( 3 ).footer() ).html( qtyPageTotal );
-
-            // Total is the new column, now at index 5
-            var totalPageTotal = api
-                .column( 5, { page: 'current'} )
-                .data()
-                .reduce( function (a, b) {
-                    return intVal(a) + intVal(b);
-                }, 0 );
-
-            $( api.column( 5 ).footer() ).html( addCommas(totalPageTotal.toFixed(2)) );
         },
         drawCallback: function (settings) {
             $('[data-toggle="tooltip"]').tooltip();
@@ -313,18 +302,6 @@ $(document).ready(function () {
         stockDetailTable.ajax.reload();
     });
 });
-
-function addCommas(nStr){
-    nStr += '';
-    var x = nStr.split('.');
-    var x1 = x[0];
-    var x2 = x.length > 1 ? '.' + x[1] : '';
-    var rgx = /(\d+)(\d{3})/;
-    while (rgx.test(x1)) {
-        x1 = x1.replace(rgx, '$1' + ',' + '$2');
-    }
-    return x1 + x2;
-}
 </script>
 
 <?php include "include/footer.php"; ?>

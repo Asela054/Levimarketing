@@ -78,6 +78,7 @@ $prefixWhere = '';
 
 if (isset($_POST['search']['value']) && trim($_POST['search']['value']) !== '') {
     $searchValue = trim($_POST['search']['value']);
+    $escaped     = $conn->real_escape_string($searchValue);
 
     if (preg_match('/^PR-?\s*(\d+)/i', $searchValue, $m)) {
         // Receipt number search
@@ -90,13 +91,7 @@ if (isset($_POST['search']['value']) && trim($_POST['search']['value']) !== '') 
     } else {
         // No recognised prefix: search across the columns users actually
         // look things up by, built manually so taxinvoice_no is guaranteed
-        // to be included. Escape via a local mysqli connection since this
-        // script doesn't otherwise open its own $conn (SSP manages its
-        // own connection internally using $sql_details).
-        $escConn = new mysqli($db_host, $db_username, $db_password, $db_name);
-        $escaped = $escConn->real_escape_string($searchValue);
-        $escConn->close();
-
+        // to be included.
         $prefixWhere = "(
             `i`.`manuelinvno`   LIKE '%".$escaped."%'
             OR `i`.`taxinvoice_no` LIKE '%".$escaped."%'
