@@ -18,23 +18,18 @@ $primaryKey = 'idtbl_invoice';
 
 // ================================
 // Read payment method filter FIRST
-// (needed before building $columns / $joinQuery)
 // ================================
 $filterpaymentmethod = null;
 if (isset($_POST['filterpaymentmethod']) && $_POST['filterpaymentmethod'] != '') {
     $filterpaymentmethod = intval($_POST['filterpaymentmethod']);
 }
 
-// ================================
 // Decide which column expression to use for "total"
-// Must be aliased AS `total` so MySQL's returned column name
-// matches the 'field' => 'total' key that ssp.customized.class.php looks up.
-// ================================
 if ($filterpaymentmethod !== null) {
-    // Per-invoice amount paid via the selected payment method only
-    $totalDb = '`pm`.`method_total` AS `total`';
+    // Use the per-method summed amount from the joined derived table
+    $totalDb = '`pm`.`method_total`';
 } else {
-    // Normal invoice total (date / sale type only, no payment method filter)
+    // Normal invoice total
     $totalDb = '`u`.`total`';
 }
 
@@ -43,74 +38,25 @@ if ($filterpaymentmethod !== null) {
 if($type==1){
 
     $columns = array(
-        array( 
-            'db' => '`u`.`manuelinvno`', 
-            'dt' => 'id', 
-            'field' => 'manuelinvno' 
-        ),
-        array( 
-            'db' => '`ud`.`name`',   
-            'dt' => 'name', 
-            'field' => 'name' 
-        ),
-        array( 
-            'db' => '`u`.`date`', 
-            'dt' => 'date', 
-            'field' => 'date' 
-        ),
-        array( 
-            'db' => '`u`.`saletype`', 
-            'dt' => 'saletype', 
-            'field' => 'saletype'
-        ),
-        array( 
-            'db' => $totalDb, 
-            'dt' => 'total', 
-            'field' => 'total' 
-        ),
-        array( 
-            'db' => '`u`.`manuelinvno`', 
-            'dt' => 'manuelinvno', 
-            'field' => 'manuelinvno'
-        )
+        array( 'db' => '`u`.`manuelinvno`', 'dt' => 'id', 'field' => 'manuelinvno' ),
+        array( 'db' => '`ud`.`name`',       'dt' => 'name', 'field' => 'name' ),
+        array( 'db' => '`u`.`date`',        'dt' => 'date', 'field' => 'date' ),
+        array( 'db' => '`u`.`saletype`',    'dt' => 'saletype', 'field' => 'saletype' ),
+        array( 'db' => $totalDb, 'dt' => 'total', 'field' => 'total' ),
+        array( 'db' => '`u`.`manuelinvno`', 'dt' => 'manuelinvno', 'field' => 'manuelinvno' )
     );
 
 }else{
 
     $columns = array(
-        array( 
-            'db' => '`u`.`idtbl_invoice`', 
-            'dt' => 'id', 
-            'field' => 'idtbl_invoice' 
-        ),
-        array( 
-            'db' => '`ud`.`name`',   
-            'dt' => 'name', 
-            'field' => 'name' 
-        ),
-        array( 
-            'db' => '`u`.`date`', 
-            'dt' => 'date', 
-            'field' => 'date' 
-        ),
-        array( 
-            'db' => '`u`.`saletype`', 
-            'dt' => 'saletype', 
-            'field' => 'saletype'
-        ),
-        array( 
-            'db' => $totalDb, 
-            'dt' => 'total', 
-            'field' => 'total' 
-        ),
-        array( 
-            'db' => '`u`.`manuelinvno`', 
-            'dt' => 'manuelinvno', 
-            'field' => 'manuelinvno'
-        )
+        array( 'db' => '`u`.`idtbl_invoice`', 'dt' => 'id', 'field' => 'idtbl_invoice' ),
+        array( 'db' => '`ud`.`name`',         'dt' => 'name', 'field' => 'name' ),
+        array( 'db' => '`u`.`date`',          'dt' => 'date', 'field' => 'date' ),
+        array( 'db' => '`u`.`saletype`',      'dt' => 'saletype', 'field' => 'saletype' ),
+        array( 'db' => $totalDb,              'dt' => 'total', 'field' => 'total' ),
+        array( 'db' => '`u`.`manuelinvno`',   'dt' => 'manuelinvno', 'field' => 'manuelinvno' )
     );
 }
-
 
 
 // Database connection
@@ -179,7 +125,6 @@ if($type==2){
 }
 
 
-
 // ================================
 // SALE TYPE FILTER
 // ================================
@@ -193,35 +138,26 @@ if(isset($_POST['filtersaletype']) && $_POST['filtersaletype'] != ''){
 }
 
 
-
 // ================================
 // PAYMENT METHOD FILTER
-// Still needed to restrict WHICH invoices appear (the LEFT JOIN above
-// alone wouldn't exclude invoices that don't have that payment method).
+// (still restricts which invoices appear; keeps the row list correct
+//  even if you later change how `pm` is built)
 // ================================
 if($filterpaymentmethod !== null){
 
     $extraWhere .= "
     AND EXISTS (
-
         SELECT 1
-
         FROM `tbl_invoice_payment_has_tbl_invoice` AS `iphi2`
-
         INNER JOIN `tbl_invoice_payment_detail` AS `ipd2`
         ON `ipd2`.`tbl_invoice_payment_idtbl_invoice_payment` 
         = `iphi2`.`tbl_invoice_payment_idtbl_invoice_payment`
-
         WHERE `iphi2`.`tbl_invoice_idtbl_invoice`
         = `u`.`idtbl_invoice`
-
         AND `ipd2`.`method` = ".$filterpaymentmethod."
-
     )
     ";
 }
-
-
 
 
 echo json_encode(
@@ -235,5 +171,3 @@ echo json_encode(
         $extraWhere
     )
 );
-
-?>

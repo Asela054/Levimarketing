@@ -96,8 +96,8 @@ include "include/topnavbar.php";
                                             <select id="filterpaymentmethod" class="form-control form-control-sm">
                                                 <option value="">All Payment Methods</option>
                                                 <option value="1">Cash</option>
-                                                <option value="2">Card</option>
-                                                <option value="3">Cheque</option>
+                                                <option value="3">Card</option>
+                                                <option value="2">Cheque</option>
                                                 <option value="4">Online Transfer</option>
                                             </select>
                                         </div>
