@@ -16,6 +16,29 @@ $table = 'tbl_invoice';
 $primaryKey = 'idtbl_invoice';
 
 
+// ================================
+// Read payment method filter FIRST
+// (needed before building $columns / $joinQuery)
+// ================================
+$filterpaymentmethod = null;
+if (isset($_POST['filterpaymentmethod']) && $_POST['filterpaymentmethod'] != '') {
+    $filterpaymentmethod = intval($_POST['filterpaymentmethod']);
+}
+
+// ================================
+// Decide which column expression to use for "total"
+// Must be aliased AS `total` so MySQL's returned column name
+// matches the 'field' => 'total' key that ssp.customized.class.php looks up.
+// ================================
+if ($filterpaymentmethod !== null) {
+    // Per-invoice amount paid via the selected payment method only
+    $totalDb = '`pm`.`method_total` AS `total`';
+} else {
+    // Normal invoice total (date / sale type only, no payment method filter)
+    $totalDb = '`u`.`total`';
+}
+
+
 // Columns
 if($type==1){
 
@@ -41,7 +64,7 @@ if($type==1){
             'field' => 'saletype'
         ),
         array( 
-            'db' => '`u`.`total`', 
+            'db' => $totalDb, 
             'dt' => 'total', 
             'field' => 'total' 
         ),
@@ -76,7 +99,7 @@ if($type==1){
             'field' => 'saletype'
         ),
         array( 
-            'db' => '`u`.`total`', 
+            'db' => $totalDb, 
             'dt' => 'total', 
             'field' => 'total' 
         ),
@@ -104,12 +127,32 @@ $sql_details = array(
 require('ssp.customized.class.php');
 
 
+// ================================
 // Join
+// ================================
 $joinQuery = "
 FROM `tbl_invoice` AS `u`
 LEFT JOIN `tbl_customer` AS `ud`
 ON (`ud`.`idtbl_customer` = `u`.`customerid`)
 ";
+
+// Only join the derived payment-method-total table when that filter is active
+if ($filterpaymentmethod !== null) {
+    $joinQuery .= "
+    LEFT JOIN (
+        SELECT
+            `iphi`.`tbl_invoice_idtbl_invoice` AS `invoice_id`,
+            SUM(`ipd`.`amount`) AS `method_total`
+        FROM `tbl_invoice_payment_has_tbl_invoice` AS `iphi`
+        INNER JOIN `tbl_invoice_payment_detail` AS `ipd`
+            ON `ipd`.`tbl_invoice_payment_idtbl_invoice_payment`
+             = `iphi`.`tbl_invoice_payment_idtbl_invoice_payment`
+        WHERE `ipd`.`method` = " . $filterpaymentmethod . "
+        GROUP BY `iphi`.`tbl_invoice_idtbl_invoice`
+    ) AS `pm`
+    ON `pm`.`invoice_id` = `u`.`idtbl_invoice`
+    ";
+}
 
 
 // Date filter
@@ -153,26 +196,26 @@ if(isset($_POST['filtersaletype']) && $_POST['filtersaletype'] != ''){
 
 // ================================
 // PAYMENT METHOD FILTER
+// Still needed to restrict WHICH invoices appear (the LEFT JOIN above
+// alone wouldn't exclude invoices that don't have that payment method).
 // ================================
-if(isset($_POST['filterpaymentmethod']) && $_POST['filterpaymentmethod'] != ''){
-
-    $filterpaymentmethod = intval($_POST['filterpaymentmethod']);
+if($filterpaymentmethod !== null){
 
     $extraWhere .= "
     AND EXISTS (
 
         SELECT 1
 
-        FROM `tbl_invoice_payment_has_tbl_invoice` AS `iphi`
+        FROM `tbl_invoice_payment_has_tbl_invoice` AS `iphi2`
 
-        INNER JOIN `tbl_invoice_payment_detail` AS `ipd`
-        ON `ipd`.`tbl_invoice_payment_idtbl_invoice_payment` 
-        = `iphi`.`tbl_invoice_payment_idtbl_invoice_payment`
+        INNER JOIN `tbl_invoice_payment_detail` AS `ipd2`
+        ON `ipd2`.`tbl_invoice_payment_idtbl_invoice_payment` 
+        = `iphi2`.`tbl_invoice_payment_idtbl_invoice_payment`
 
-        WHERE `iphi`.`tbl_invoice_idtbl_invoice`
+        WHERE `iphi2`.`tbl_invoice_idtbl_invoice`
         = `u`.`idtbl_invoice`
 
-        AND `ipd`.`method` = ".$filterpaymentmethod."
+        AND `ipd2`.`method` = ".$filterpaymentmethod."
 
     )
     ";
