@@ -17,10 +17,11 @@ session_start();
  * multi-invoice cheques into a single row, GROUP_CONCAT the invoice numbers
  * instead of joining tbl_invoice directly - ask and I'll adjust it.
  *
- * FILTERS - trimmed down to just Customer + Date (per request). The
- * bank / cheque-no / addaccountstatus filters have been removed from this
- * script; those columns are still returned (still displayed in the report),
- * they're just no longer filterable from the UI.
+ * FILTERS - Customer only. There are no date filters - use the DataTables
+ * search box / column sorting for anything else. If you ever want date
+ * filtering back, add the usual
+ * search_date / search_week / search_month / search_from_date+search_to_date
+ * block against `pd`.`chequedate`.
  */
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -100,36 +101,7 @@ $joinQuery = "FROM `tbl_invoice_payment_detail` AS `pd`
 // tbl_location_idtbl_location actually lives).
 $extraWhere = "`pd`.`method` = 2 AND `pd`.`status` = 1 AND `i`.`status` = 1 AND `i`.`tbl_location_idtbl_location` = $locationID";
 
-// Date filters - applied to the CHEQUE date by default, since that's what a
-// "cheque collection" report is normally organised around. Swap `chequedate`
-// for `p`.`date` below if you'd rather filter by payment-entry date instead.
-if (!empty($_POST['search_date'])) {
-    $date = $_POST['search_date'];
-    $extraWhere .= " AND `pd`.`chequedate` = '$date'";
-} elseif (!empty($_POST['search_week'])) {
-    $week = $_POST['search_week'];
-    $weeksep = explode('-W', $week);
-    $year = $weeksep[0];
-    $week1 = $weeksep[1];
-    $dto = new DateTime();
-    $dto->setISODate($year, $week1);
-    $startDate = $dto->format('Y-m-d');
-    $dto->modify('+6 days');
-    $endDate = $dto->format('Y-m-d');
-
-    $extraWhere .= " AND `pd`.`chequedate` BETWEEN '$startDate' AND '$endDate'";
-} elseif (!empty($_POST['search_month'])) {
-    $month = $_POST['search_month'];
-    $month_arr = explode('-', $month);
-    $extraWhere .= " AND YEAR(`pd`.`chequedate`) = '$month_arr[0]' AND MONTH(`pd`.`chequedate`) = '$month_arr[1]'";
-} elseif (!empty($_POST['search_from_date']) && !empty($_POST['search_to_date'])) {
-    $from_date = $_POST['search_from_date'];
-    $to_date = $_POST['search_to_date'];
-
-    $extraWhere .= " AND `pd`.`chequedate` BETWEEN '$from_date' AND '$to_date'";
-}
-
-// Customer filter - only remaining non-date filter, per request.
+// Customer filter - only remaining filter, per request.
 if (!empty($_POST['search_customer'])) {
     $customerID = (int) $_POST['search_customer'];
     $extraWhere .= " AND `c`.`idtbl_customer` = $customerID";

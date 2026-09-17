@@ -25,9 +25,6 @@ $sql_details = array(
 	'host' => $db_host 
 ); 
 
-// Local mysqli connection just for safely escaping the keyword search below 
-$escConn = new mysqli($db_host, $db_username, $db_password, $db_name); 
-
 require('ssp.customized.class.php'); 
 
 // u  = tbl_stock 
@@ -37,8 +34,8 @@ $joinQuery = "FROM `tbl_stock` AS `u`
     LEFT JOIN `tbl_product` AS `ud` ON (`ud`.`idtbl_product` = `u`.`tbl_product_idtbl_product`) 
     LEFT JOIN `tbl_location` AS `uc` ON (`uc`.`idtbl_location` = `u`.`tbl_location_idtbl_location`)"; 
 
-// Base clause - all products/stock rows show by default 
-$extraWhere = "`u`.`status` IN (0,1)"; 
+// Base clause - only show rows with positive stock qty
+$extraWhere = "`u`.`status` IN (0,1) AND `u`.`qty` > 0"; 
 
 // Category filter 
 if (!empty($_POST['search_category'])) { 
@@ -53,13 +50,18 @@ if (!empty($_POST['search_product'])) {
 } 
 
 // Keyword search - match product name anywhere (LIKE %keyword%) 
-if (!empty($_POST['search_keyword'])) { 
-    $keyword = trim($_POST['search_keyword']); 
-    if ($keyword !== '' && !$escConn->connect_error) { 
-        $keyword_esc = $escConn->real_escape_string($keyword); 
-        $extraWhere .= " AND `ud`.`product_name` LIKE '%" . $keyword_esc . "%'"; 
-    } 
-} 
+// Only open the escaping connection when actually needed
+$escConn = null;
+if (!empty($_POST['search_keyword'])) {
+    $keyword = trim($_POST['search_keyword']);
+    if ($keyword !== '') {
+        $escConn = new mysqli($db_host, $db_username, $db_password, $db_name);
+        if (!$escConn->connect_error) {
+            $keyword_esc = $escConn->real_escape_string($keyword);
+            $extraWhere .= " AND `ud`.`product_name` LIKE '%" . $keyword_esc . "%'";
+        }
+    }
+}
 
 // Location filter - restrict every query to the logged-in user's location 
 if (!empty($locationId)) { 
@@ -70,4 +72,4 @@ echo json_encode(
 	SSP::simple( $_POST, $sql_details, $table, $primaryKey, $columns, $joinQuery, $extraWhere ) 
 ); 
 
-$escConn->close();
+if ($escConn) { $escConn->close(); }

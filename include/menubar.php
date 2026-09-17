@@ -257,6 +257,24 @@ else if($lastElement=='rptchequecollection.php'){
     $statuscheck=checkprivilege($menuprivilegearray, 42, 3);
     $deletecheck=checkprivilege($menuprivilegearray, 42, 4);
 }
+else if($lastElement=='expencestype.php'){
+    $addcheck=checkprivilege($menuprivilegearray, 43, 1);
+    $editcheck=checkprivilege($menuprivilegearray, 43, 2);
+    $statuscheck=checkprivilege($menuprivilegearray, 43, 3);
+    $deletecheck=checkprivilege($menuprivilegearray, 43, 4);
+}
+else if($lastElement=='expensepayment.php'){
+    $addcheck=checkprivilege($menuprivilegearray, 44, 1);
+    $editcheck=checkprivilege($menuprivilegearray, 44, 2);
+    $statuscheck=checkprivilege($menuprivilegearray, 44, 3);
+    $deletecheck=checkprivilege($menuprivilegearray, 44, 4);
+}
+else if($lastElement=='rptexpensecheque.php'){
+    $addcheck=checkprivilege($menuprivilegearray, 45, 1);
+    $editcheck=checkprivilege($menuprivilegearray, 45, 2);
+    $statuscheck=checkprivilege($menuprivilegearray, 45, 3);
+    $deletecheck=checkprivilege($menuprivilegearray, 45, 4);
+}
 
 
 function checkprivilege($arraymenu, $menuID, $type){
@@ -405,6 +423,29 @@ function checkprivilege($arraymenu, $menuID, $type){
             </div>
             <?php } } ?>
 
+            <!-- Expenses -->
+            <?php if(menucheck($menuprivilegearray, 43)==1 | menucheck($menuprivilegearray, 44)==1){ ?>
+            <div class="sidenav-menu-heading">Expenses</div>
+            <div class="sidenav-item">
+                <a class="nav-link collapsed" href="javascript:void(0);" data-toggle="collapse"
+                    data-target="#collapsexpenses" aria-expanded="false" aria-controls="collapsexpenses">
+                    <div class="nav-link-icon"><i class="fas fa-money-bill"></i></div>
+                    <span class="nav-link-text">Expenses</span>
+                    <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                </a>
+                <div class="collapse <?php if($lastElement=="expencestype.php" | $lastElement=="expensepayment.php"){echo 'show';} ?>"
+                    id="collapsexpenses" data-parent="#accordionSidenav" data-flyout-title="Expenses">
+                    <nav class="sidenav-menu-nested nav accordion" id="accordionSidenavPages">
+                        <?php if(menucheck($menuprivilegearray, 43)==1){ ?>
+                        <a class="nav-link<?php if($lastElement=="expencestype.php"){echo ' active';} ?>" href="expencestype.php"><span class="nav-link-text">Expenses Type</span></a>
+                        <?php } if(menucheck($menuprivilegearray, 44)==1){ ?>
+                        <a class="nav-link<?php if($lastElement=="expensepayment.php"){echo ' active';} ?>" href="expensepayment.php"><span class="nav-link-text">Expenses Payment</span></a>
+                        <?php } ?>
+                    </nav>
+                </div>
+            </div>
+            <?php } ?>
+
             <!-- Procurement & Stock -->
             <?php if(menucheck($menuprivilegearray, 9)==1 | menucheck($menuprivilegearray, 10)==1 | menucheck($menuprivilegearray, 33)==1 | menucheck($menuprivilegearray, 34)==1 | menucheck($menuprivilegearray, 23)==1 | menucheck($menuprivilegearray, 24)==1 | menucheck($menuprivilegearray, 30)==1){ ?>
             <div class="sidenav-menu-heading">Procurement &amp; Stock</div>
@@ -514,7 +555,7 @@ function checkprivilege($arraymenu, $menuID, $type){
             <?php } } ?>
 
             <!-- Reports -->
-            <?php if(menucheck($menuprivilegearray, 16)==1 | menucheck($menuprivilegearray, 17)==1 | menucheck($menuprivilegearray, 18)==1 | menucheck($menuprivilegearray, 19)==1 | menucheck($menuprivilegearray, 20)==1 | menucheck($menuprivilegearray, 32)==1 | menucheck($menuprivilegearray, 41)==1 | menucheck($menuprivilegearray, 42)==1){ ?>
+            <?php if(menucheck($menuprivilegearray, 16)==1 | menucheck($menuprivilegearray, 17)==1 | menucheck($menuprivilegearray, 18)==1 | menucheck($menuprivilegearray, 19)==1 | menucheck($menuprivilegearray, 20)==1 | menucheck($menuprivilegearray, 32)==1 | menucheck($menuprivilegearray, 41)==1 | menucheck($menuprivilegearray, 42)==1 | menucheck($menuprivilegearray, 45)==1){ ?>
             <div class="sidenav-menu-heading">Reports</div>
             <div class="sidenav-item">
                 <a class="nav-link collapsed" href="javascript:void(0);" data-toggle="collapse"
@@ -523,7 +564,7 @@ function checkprivilege($arraymenu, $menuID, $type){
                     <span class="nav-link-text">Reports</span>
                     <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                 </a>
-                <div class="collapse <?php if($lastElement=="rptgrn.php" | $lastElement=="rptinvoiceview.php" | $lastElement=="rptinvoicepayment.php" | $lastElement=="rptpaymentreceipt.php" | $lastElement=="rptstock.php" | $lastElement=="rptcredit.php" | $lastElement=="rptcustomercreditanalysis.php"){echo 'show';} ?>"
+                <div class="collapse <?php if($lastElement=="rptgrn.php" | $lastElement=="rptinvoiceview.php" | $lastElement=="rptinvoicepayment.php" | $lastElement=="rptpaymentreceipt.php" | $lastElement=="rptstock.php" | $lastElement=="rptcredit.php" | $lastElement=="rptcustomercreditanalysis.php" | $lastElement=="rptexpensecheque.php"){echo 'show';} ?>"
                     id="collapsreports" data-parent="#accordionSidenav" data-flyout-title="Reports">
                     <nav class="sidenav-menu-nested nav accordion" id="accordionSidenavPages">
                         <?php if(menucheck($menuprivilegearray, 16)==1){ ?>
@@ -542,6 +583,8 @@ function checkprivilege($arraymenu, $menuID, $type){
                         <a class="nav-link<?php if($lastElement=="rptcustomercreditanalysis.php"){echo ' active';} ?>" href="rptcustomercreditanalysis.php"><span class="nav-link-text">Customer Credit Analysis</span></a>
                         <?php }if(menucheck($menuprivilegearray, 42)==1){ ?>
                         <a class="nav-link<?php if($lastElement=="rptchequecollection.php"){echo ' active';} ?>" href="rptchequecollection.php"><span class="nav-link-text">Cheque Collection Report</span></a>
+                        <?php }if(menucheck($menuprivilegearray, 45)==1){ ?>
+                        <a class="nav-link<?php if($lastElement=="rptexpensecheque.php"){echo ' active';} ?>" href="rptexpensecheque.php"><span class="nav-link-text">Expenses Cheque Report</span></a>
                         <?php } ?>
                     </nav>
                 </div>
