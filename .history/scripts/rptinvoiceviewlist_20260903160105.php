@@ -3,7 +3,6 @@
 session_start();
 
 $type =  $_SESSION['privatetype'];
-$locationId = $_SESSION['location_id'];
 
 $table = 'tbl_invoice';
 $primaryKey = 'idtbl_invoice';
@@ -126,11 +125,6 @@ if(isset($_POST['filterpaymentmethod']) && $_POST['filterpaymentmethod'] !== '')
 		WHERE `iphi`.`tbl_invoice_idtbl_invoice` = `u`.`idtbl_invoice`
 		  AND `ipd`.`method` = " . $filterpaymentmethod . "
 	)";
-}
-
-// Location filter - restrict every query to the logged-in user's location
-if (!empty($locationId)) {
-	$extraWhere .= " AND `u`.`tbl_location_idtbl_location` = " . intval($locationId);
 }
 
 echo json_encode(
