@@ -1,6 +1,17 @@
 <?php
 
 session_start();
+/*
+ * Server-side processing for the Invoice Report (rptinvoiceviewlist.php DataTable).
+ *
+ * FILTERS - Customer, Payment Method, and Invoice Type only. There are no
+ * date filters - use the DataTables search box / column sorting for
+ * anything else. If you ever want date filtering back, add the usual
+ * search_date / search_week / search_month / search_from_date+search_to_date
+ * block against `u`.`date`, same as before.
+ *
+ * INVOICE TYPE FILTER - `u`.`invtype`: 0 = Non-Tax Invoice, 1 = Tax Invoice.
+ */
 
 $type =  $_SESSION['privatetype'];
 $locationId = $_SESSION['location_id'];
@@ -44,68 +55,12 @@ require('ssp.customized.class.php' );
 
 $joinQuery = "FROM `tbl_invoice` AS `u` LEFT JOIN `tbl_customer` AS `ud` ON (`ud`.`idtbl_customer` = `u`.`customerid`)";
 
-// default base clause, so $extraWhere is always defined even if no date/week/month/range param is sent
+// Base clause. For $type==1 (manual invoice numbers only) keep restricting to
+// rows that actually have a manuelinvno, same as before.
 if($type==1){
 	$extraWhere = "`u`.`status` IN (0,1) AND `u`.`manuelinvno` IS NOT NULL";
 }else{
 	$extraWhere = "`u`.`status` IN (0,1)";
-}
-
-if($type==1){
-
-	if(!empty($_POST['search_date'])){ 
-		$date = $_POST['search_date'];
-		$extraWhere = "`u`.`status` IN (0,1) AND `u`.date = '$date' AND `u`.`manuelinvno`  IS NOT NULL";
-	}elseif(!empty($_POST['search_week'])){
-			$week = $_POST['search_week'];
-			$weeksep=explode('-W', $week);
-			$year=$weeksep[0];
-			$week1=$weeksep[1];
-			$dto = new DateTime();
-			$dto->setISODate($year, $week1);
-			$startDate = $dto->format('Y-m-d');
-			$dto->modify('+6 days');
-			$endDate = $dto->format('Y-m-d');
-			$extraWhere = "`u`.`status` IN (0,1) AND `u`.date BETWEEN '$startDate' AND '$endDate' AND `u`.`manuelinvno`  IS NOT NULL";
-	}
-	elseif(!empty($_POST['search_month'])){
-		$month = $_POST['search_month'];
-		$month_arr = explode('-',$month);
-		$extraWhere = "`u`.`status` IN (0,1) AND YEAR(`u`.date) = '$month_arr[0]' AND Month(`u`.date) = '$month_arr[1]' AND `u`.`manuelinvno`  IS NOT NULL";
-	}
-	elseif(!empty($_POST['search_from_date'] && $_POST['search_to_date'])){
-		$from_date = $_POST['search_from_date'];
-		$to_date = $_POST['search_to_date'];
-		$extraWhere = "`u`.`status` IN (0,1) AND `u`.date BETWEEN '$from_date' AND '$to_date' AND `u`.`manuelinvno`  IS NOT NULL";
-	}
-
-}else{
-
-	if(!empty($_POST['search_date'])){ 
-		$date = $_POST['search_date'];
-		$extraWhere = "`u`.`status` IN (0,1) AND `u`.date = '$date'";
-	}elseif(!empty($_POST['search_week'])){
-			$week = $_POST['search_week'];
-			$weeksep=explode('-W', $week);
-			$year=$weeksep[0];
-			$week1=$weeksep[1];
-			$dto = new DateTime();
-			$dto->setISODate($year, $week1);
-			$startDate = $dto->format('Y-m-d');
-			$dto->modify('+6 days');
-			$endDate = $dto->format('Y-m-d');
-			$extraWhere = "`u`.`status` IN (0,1) AND `u`.date BETWEEN '$startDate' AND '$endDate'";
-	}
-	elseif(!empty($_POST['search_month'])){
-		$month = $_POST['search_month'];
-		$month_arr = explode('-',$month);
-		$extraWhere = "`u`.`status` IN (0,1) AND YEAR(`u`.date) = '$month_arr[0]' AND Month(`u`.date) = '$month_arr[1]'";
-	}
-	elseif(!empty($_POST['search_from_date'] && $_POST['search_to_date'])){
-		$from_date = $_POST['search_from_date'];
-		$to_date = $_POST['search_to_date'];
-		$extraWhere = "`u`.`status` IN (0,1) AND `u`.date BETWEEN '$from_date' AND '$to_date'";
-	}
 }
 
 // Customer filter
@@ -126,6 +81,12 @@ if(isset($_POST['filterpaymentmethod']) && $_POST['filterpaymentmethod'] !== '')
 		WHERE `iphi`.`tbl_invoice_idtbl_invoice` = `u`.`idtbl_invoice`
 		  AND `ipd`.`method` = " . $filterpaymentmethod . "
 	)";
+}
+
+// Invoice Type filter (0 = Non-Tax Invoice, 1 = Tax Invoice)
+if(isset($_POST['filterinvtype']) && $_POST['filterinvtype'] !== ''){
+	$filterinvtype = intval($_POST['filterinvtype']);
+	$extraWhere .= " AND `u`.`invtype` = " . $filterinvtype;
 }
 
 // Location filter - restrict every query to the logged-in user's location

@@ -11,14 +11,14 @@ session_start();
  * - rather than via EXISTS - is correct here.
  *
  * FIXES applied vs the previous version of this script:
- * 1. $extraWhere was only ever set INSIDE the date-filter if/elseif branches -
- *    on first page load (no date filter posted yet) it was undefined. It now
- *    always has a base value up front, and the date branches override it.
- * 2. Invoice ID now resolves to the invoice's tax/manual invoice number
+ * 1. Invoice ID now resolves to the invoice's tax/manual invoice number
  *    (COALESCE(taxinvoice_no, manuelinvno, idtbl_invoice)) instead of the raw
  *    foreign key idtbl_invoice, matching the other invoice-related reports.
- * 3. Added Customer + Payment Method filters, using the `ue`/`uc` joins that
+ * 2. Added Customer + Payment Method filters, using the `ue`/`uc` joins that
  *    were already present but only used for display, not filtering.
+ * 3. Date/Week/Month/Date-Range filters have been removed - the report now
+ *    always lists all matching receipts, filterable only by Customer and
+ *    Payment Method.
  */
 
 $table = 'tbl_invoice_payment';
@@ -69,33 +69,8 @@ $joinQuery = "FROM `tbl_invoice_payment` AS `u`
     LEFT JOIN `tbl_invoice` AS `ub` ON (`ub`.`idtbl_invoice` = `ud`.`tbl_invoice_idtbl_invoice`)
     LEFT JOIN `tbl_customer` AS `ue` ON (`ue`.`idtbl_customer` = `ub`.`customerid`)";
 
-// Base clause - always defined, regardless of which (if any) date filter is posted.
+// Base clause - always defined.
 $extraWhere = "`u`.`status` IN (0,1)";
-
-if (!empty($_POST['search_date'])) {
-    $date = $_POST['search_date'];
-    $extraWhere = "`u`.`status` IN (0,1) AND `u`.`date` = '$date'";
-} elseif (!empty($_POST['search_week'])) {
-    $week = $_POST['search_week'];
-    $weeksep = explode('-W', $week);
-    $year = $weeksep[0];
-    $week1 = $weeksep[1];
-    $dto = new DateTime();
-    $dto->setISODate($year, $week1);
-    $startDate = $dto->format('Y-m-d');
-    $dto->modify('+6 days');
-    $endDate = $dto->format('Y-m-d');
-
-    $extraWhere = "`u`.`status` IN (0,1) AND `u`.`date` BETWEEN '$startDate' AND '$endDate'";
-} elseif (!empty($_POST['search_month'])) {
-    $month = $_POST['search_month'];
-    $month_arr = explode('-', $month);
-    $extraWhere = "`u`.`status` IN (0,1) AND YEAR(`u`.`date`) = '$month_arr[0]' AND MONTH(`u`.`date`) = '$month_arr[1]'";
-} elseif (!empty($_POST['search_from_date']) && !empty($_POST['search_to_date'])) {
-    $from_date = $_POST['search_from_date'];
-    $to_date = $_POST['search_to_date'];
-    $extraWhere = "`u`.`status` IN (0,1) AND `u`.`date` BETWEEN '$from_date' AND '$to_date'";
-}
 
 // Customer filter
 if (!empty($_POST['search_customer'])) {

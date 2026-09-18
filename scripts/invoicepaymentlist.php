@@ -6,12 +6,7 @@ session_start();
  * Server-side processing for the Invoice Payment report.
  *
  * FIXES applied vs the previous version of this script:
- * 1. $extraWhere was only ever set INSIDE the date-filter if/elseif branches -
- *    if none of search_date / search_week / search_month / search_from_date+
- *    search_to_date were posted (e.g. first page load before any filter is
- *    chosen), $extraWhere was undefined and passed to SSP::simple() as such.
- *    It's now given a base value up front and the branches override it.
- * 2. The old direct `LEFT JOIN tbl_invoice_payment_detail AS uc` was declared
+ * 1. The old direct `LEFT JOIN tbl_invoice_payment_detail AS uc` was declared
  *    but never actually used in $columns or $extraWhere - dead join, removed.
  *    A Payment Method filter now uses an EXISTS subquery instead of a JOIN,
  *    since joining payment-detail rows directly would multiply each payment
@@ -19,11 +14,11 @@ session_start();
  *    existing per-invoice duplication from the tbl_invoice_payment_has_tbl_invoice
  *    bridge below), which would silently inflate the Total/Payamount/Payment/
  *    Balance figures shown per row.
- * 3. Invoice ID now resolves to the invoice's tax/manual invoice number
+ * 2. Invoice ID now resolves to the invoice's tax/manual invoice number
  *    (COALESCE(taxinvoice_no, manuelinvno, idtbl_invoice)) instead of the raw
  *    foreign key idtbl_invoice, matching the other invoice-related reports.
- * 4. Added Customer (name + filter) via tbl_invoice -> tbl_customer.
- * 5. NEW: When a Payment Method filter is applied, the PAYMENT column no
+ * 3. Added Customer (name + filter) via tbl_invoice -> tbl_customer.
+ * 4. When a Payment Method filter is applied, the PAYMENT column no
  *    longer shows the full payment-header amount (`u`.`payment`), which can
  *    include multiple methods split across one payment (e.g. half Cash,
  *    half Card). It now shows only the amount actually paid via the
@@ -33,6 +28,9 @@ session_start();
  *    TOTAL / DISCOUNT / PAYAMOUNT (from the invoice-payment bridge) and
  *    BALANCE (payment-level remaining balance) are unaffected - they are
  *    not payment-method-specific figures.
+ * 5. Date/Week/Month/Date-Range filters have been removed - the report now
+ *    always lists all matching payments, filterable only by Customer and
+ *    Payment Method.
  *
  * NOTE ON ROW DUPLICATION: `tbl_invoice_payment_has_tbl_invoice` is a
  * many-to-many bridge (a payment can be split across more than one invoice),
@@ -118,33 +116,8 @@ if ($filterpaymentmethod !== null) {
     ";
 }
 
-// Base clause - always defined, regardless of which (if any) date filter is posted.
+// Base clause - always defined.
 $extraWhere = "`u`.`status` IN (0,1)";
-
-if (!empty($_POST['search_date'])) {
-    $date = $_POST['search_date'];
-    $extraWhere = "`u`.`status` IN (0,1) AND `u`.`date` = '$date'";
-} elseif (!empty($_POST['search_week'])) {
-    $week = $_POST['search_week'];
-    $weeksep = explode('-W', $week);
-    $year = $weeksep[0];
-    $week1 = $weeksep[1];
-    $dto = new DateTime();
-    $dto->setISODate($year, $week1);
-    $startDate = $dto->format('Y-m-d');
-    $dto->modify('+6 days');
-    $endDate = $dto->format('Y-m-d');
-
-    $extraWhere = "`u`.`status` IN (0,1) AND `u`.`date` BETWEEN '$startDate' AND '$endDate'";
-} elseif (!empty($_POST['search_month'])) {
-    $month = $_POST['search_month'];
-    $month_arr = explode('-', $month);
-    $extraWhere = "`u`.`status` IN (0,1) AND YEAR(`u`.`date`) = '$month_arr[0]' AND MONTH(`u`.`date`) = '$month_arr[1]'";
-} elseif (!empty($_POST['search_from_date']) && !empty($_POST['search_to_date'])) {
-    $from_date = $_POST['search_from_date'];
-    $to_date = $_POST['search_to_date'];
-    $extraWhere = "`u`.`status` IN (0,1) AND `u`.`date` BETWEEN '$from_date' AND '$to_date'";
-}
 
 // Customer filter
 if (!empty($_POST['search_customer'])) {

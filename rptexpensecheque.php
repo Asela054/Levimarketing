@@ -1,11 +1,9 @@
 <?php
 include "include/header.php";
 
-$locationid = $_SESSION['location_id'];
-
-// Customer list for the filter dropdown
-$sqlcustomer = "SELECT `idtbl_customer`, `type`, `name`, `nic`, `phone`, `email`, `address`, `vat_num`, `s_vat`, `creditlimit`, `credittype`, `creditperiod`, `emergencydate`, `status`, `updatedatetime`, `tbl_user_idtbl_user`, `tbl_area_idtbl_area` FROM `tbl_customer` WHERE `status` = 1 ORDER BY `name` ASC";
-$resultcustomer = $conn->query($sqlcustomer);
+// Expenses type list for the filter dropdown
+$sqlexpencestype = "SELECT `idtbl_expences_type`, `expencestype` FROM `tbl_expences_type` WHERE `status` = 1 ORDER BY `expencestype` ASC";
+$resultexpencestype = $conn->query($sqlexpencestype);
 
 include "include/topnavbar.php";
 ?>
@@ -20,7 +18,7 @@ include "include/topnavbar.php";
                     <div class="page-header-content py-3">
                         <h1 class="page-header-title">
                             <div class="page-header-icon"><i data-feather="file-text"></i></div>
-                            <span>Cheque Collection Report</span>
+                            <span>Expenses Cheque Payment Report</span>
                         </h1>
                     </div>
                 </div>
@@ -36,12 +34,22 @@ include "include/topnavbar.php";
                                     <div class="form-row align-items-end">
 
                                         <div class="col-auto" style="min-width: 220px;">
-                                            <label class="small font-weight-bold text-dark mb-1">Customer</label>
-                                            <select class="form-control form-control-sm selecter2 px-0" id="search_customer">
-                                                <option value="">All Customers</option>
-                                                <?php if ($resultcustomer->num_rows > 0) { while ($rowcustomer = $resultcustomer->fetch_assoc()) { ?>
-                                                <option value="<?php echo $rowcustomer['idtbl_customer']; ?>"><?php echo $rowcustomer['name']; ?></option>
+                                            <label class="small font-weight-bold text-dark mb-1">Expenses Type</label>
+                                            <select class="form-control form-control-sm selecter2 px-0" id="search_expencestype">
+                                                <option value="">All Types</option>
+                                                <?php if ($resultexpencestype->num_rows > 0) { while ($rowtype = $resultexpencestype->fetch_assoc()) { ?>
+                                                <option value="<?php echo $rowtype['idtbl_expences_type']; ?>"><?php echo $rowtype['expencestype']; ?></option>
                                                 <?php }} ?>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-auto" style="min-width: 170px;">
+                                            <label class="small font-weight-bold text-dark mb-1">Cheque Status</label>
+                                            <select class="form-control form-control-sm" id="search_cheque_status">
+                                                <option value="">All</option>
+                                                <option value="1">Pending</option>
+                                                <option value="2">Realized</option>
+                                                <option value="3">Returned</option>
                                             </select>
                                         </div>
 
@@ -55,29 +63,26 @@ include "include/topnavbar.php";
                         </div>
                         <hr>
 
-                        <table class="table table-bordered table-striped table-sm nowrap" id="dataTableChequeCollection">
+                        <table class="table table-bordered table-striped table-sm nowrap" id="dataTableExpenseCheque">
                             <thead>
                                 <tr>
                                     <th>#</th>
                                     <th>Payment Date</th>
-                                    <th>Invoice No</th>
-                                    <th>Invoice Date</th>
-                                    <th>Customer</th>
-                                    <th>Location</th>
+                                    <th>Ref No</th>
+                                    <th>Expenses Type</th>
                                     <th>Bank</th>
+                                    <th>Branch</th>
                                     <th>Cheque No</th>
                                     <th>Cheque Date</th>
-                                    <th class="text-right">Cheque Amount</th>
-                                    <th class="text-right">Applied to Invoice</th>
-                                    <th class="text-center">Added to A/C</th>
-                                    <th class="text-center">Status</th>
+                                    <th class="text-right">Amount</th>
+                                    <th class="text-center">Cheque Status</th>
+                                    <th>Remarks</th>
                                 </tr>
                             </thead>
                             <tfoot>
                                 <tr>
-                                    <th colspan="9" class="text-right">Total :</th>
+                                    <th colspan="8" class="text-right">Total :</th>
                                     <th class="text-right" id="footChequeTotal">0.00</th>
-                                    <th class="text-right" id="footInvoiceTotal">0.00</th>
                                     <th colspan="2"></th>
                                 </tr>
                             </tfoot>
@@ -94,13 +99,13 @@ include "include/topnavbar.php";
 <script>
     $(document).ready(function() {
 
-        $('#search_customer').select2({
+        $('#search_expencestype').select2({
             width: '100%',
-            placeholder: 'All Customers',
+            placeholder: 'All Types',
             allowClear: true
         });
 
-        var chequeTable = $('#dataTableChequeCollection').DataTable({
+        var expenseChequeTable = $('#dataTableExpenseCheque').DataTable({
             "destroy": true,
             "processing": true,
             "serverSide": true,
@@ -108,80 +113,77 @@ include "include/topnavbar.php";
             "pageLength": 25,
             "stateSave": true,
             ajax: {
-                url: "scripts/rptchequecollectionlist.php",
+                url: "scripts/rptexpensechequelist.php",
                 type: "POST",
                 cache: true,
                 data: function (d) {
-                    d.search_customer = $('#search_customer').val();
+                    d.search_expencestype   = $('#search_expencestype').val();
+                    d.search_cheque_status  = $('#search_cheque_status').val();
                 },
                 dataSrc: function (json) {
                     var chequeSum = 0;
-                    var invoiceSum = 0;
                     if (json.data) {
                         json.data.forEach(function (row) {
-                            chequeSum += parseFloat(row.chequeamount) || 0;
-                            invoiceSum += parseFloat(row.invoiceamount) || 0;
+                            chequeSum += parseFloat(row.amount) || 0;
                         });
                     }
                     $('#footChequeTotal').text(addCommas(chequeSum.toFixed(2)));
-                    $('#footInvoiceTotal').text(addCommas(invoiceSum.toFixed(2)));
                     return json.data;
                 }
             },
-            "order": [[1, "desc"]],
+            "order": [[7, "desc"]],
             "columns": [
-                { "data": "idtbl_invoice_payment_detail" },
+                { "data": "idtbl_expensepayment" },
                 { "data": "paymentdate" },
                 {
                     "targets": -1, "className": '', "data": null,
                     "render": function (data, type, full) {
-                        return full['manuelinvno'] ? ('INV-' + full['manuelinvno']) : ('INV-' + full['idtbl_invoice']);
+                        return full['refno'] ? full['refno'] : '-';
                     }
                 },
-                { "data": "invoicedate" },
                 {
                     "targets": -1, "className": '', "data": null,
                     "render": function (data, type, full) {
-                        return full['name'] ? full['name'] : '-';
+                        return full['expencestype'] ? full['expencestype'] : '-';
                     }
                 },
-                { "data": "location" },
                 {
                     "targets": -1, "className": '', "data": null,
                     "render": function (data, type, full) {
-                        return full['bank'] ? full['bank'] : '-';
-                    }
-                },
-                { "data": "chequeno" },
-                { "data": "chequedate" },
-                {
-                    "targets": -1, "className": 'text-right', "data": null,
-                    "render": function (data, type, full) {
-                        return addCommas(parseFloat(full['chequeamount']).toFixed(2));
+                        return full['cheque_bank_name'] ? full['cheque_bank_name'] : '-';
                     }
                 },
                 {
+                    "targets": -1, "className": '', "data": null,
+                    "render": function (data, type, full) {
+                        return full['cheque_branch'] ? full['cheque_branch'] : '-';
+                    }
+                },
+                { "data": "cheque_no" },
+                { "data": "cheque_date" },
+                {
                     "targets": -1, "className": 'text-right', "data": null,
                     "render": function (data, type, full) {
-                        return addCommas(parseFloat(full['invoiceamount']).toFixed(2));
+                        return addCommas(parseFloat(full['amount']).toFixed(2));
                     }
                 },
                 {
                     "targets": -1, "className": 'text-center', "data": null,
                     "render": function (data, type, full) {
-                        if (full['addaccountstatus'] == 1) {
-                            return '<i class="fas fa-check text-success"></i>&nbsp;Added';
+                        if (full['cheque_status'] == 1) {
+                            return '<span class="badge badge-warning">Pending</span>';
+                        } else if (full['cheque_status'] == 2) {
+                            return '<span class="badge badge-success">Realized</span>';
+                        } else if (full['cheque_status'] == 3) {
+                            return '<span class="badge badge-danger">Returned</span>';
                         }
-                        return '<i class="fas fa-times text-danger"></i>&nbsp;Pending';
+                        return '-';
                     }
                 },
                 {
-                    "targets": -1, "className": 'text-center', "data": null,
+                    "targets": -1, "className": '', "data": null,
                     "render": function (data, type, full) {
-                        if (full['paymentdetailstatus'] == 1) {
-                            return '<span class="badge badge-success">Active</span>';
-                        }
-                        return '<span class="badge badge-danger">Cancelled</span>';
+                        return full['remarks'] ? full['remarks'] : '-';
                     }
                 }
             ]
@@ -190,13 +192,14 @@ include "include/topnavbar.php";
         $('body').tooltip({ selector: '[data-toggle="tooltip"]' });
 
         $('#btnSearch').click(function() {
-            chequeTable.ajax.reload();
+            expenseChequeTable.ajax.reload();
         });
 
         $('#btnResetFilter').click(function() {
             $('#filterForm')[0].reset();
-            $('#search_customer').val(null).trigger('change');
-            chequeTable.ajax.reload();
+            $('#search_expencestype').val(null).trigger('change');
+            $('#search_cheque_status').val('');
+            expenseChequeTable.ajax.reload();
         });
     });
 
