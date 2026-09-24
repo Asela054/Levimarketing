@@ -12,6 +12,14 @@ $grnsupplier=isset($_POST['grnsupplier']) && $_POST['grnsupplier'] !== '' ? intv
 $grndate=$conn->real_escape_string($_POST['grndate']);
 $grninvoice=$conn->real_escape_string($_POST['grninvoice']);
 $grndispatch=$conn->real_escape_string($_POST['grndispatch']);
+
+// vattype: 1 = Exclusive, 2 = Inclusive. Anything else (missing, 0, garbage) falls back to Exclusive.
+$grnvattype=isset($_POST['grnvattype']) ? intval($_POST['grnvattype']) : 1;
+if ($grnvattype !== 1 && $grnvattype !== 2) { $grnvattype = 1; }
+
+$grnvatpercentage=isset($_POST['grnvatpercentage']) ? floatval($_POST['grnvatpercentage']) : 0;
+$grnsubtotal=isset($_POST['grnsubtotal']) ? $conn->real_escape_string($_POST['grnsubtotal']) : '0';
+$grnvatamount=isset($_POST['grnvatamount']) ? $conn->real_escape_string($_POST['grnvatamount']) : '0';
 $grnnettotal=$conn->real_escape_string($_POST['grnnettotal']);
 $tableData=$_POST['tableData'];
 
@@ -64,8 +72,8 @@ if ($withPO) {
     $supplierIdVal = $grnsupplier;
 }
 
-$insertgrn="INSERT INTO `tbl_grn`(`date`, `total`, `invoicenum`, `dispatchnum`, `porder_id`, `status`, `confirm_status`, `updatedatetime`, `tbl_user_idtbl_user`, `tbl_location_idtbl_location`, `tbl_supplier_idtbl_supplier`)
-    VALUES ('$grndate','$grnnettotal','$grninvoice','$grndispatch','$porderIdVal','1','0','$updatedatetime','$userID','$locationID','$supplierIdVal')";
+$insertgrn="INSERT INTO `tbl_grn`(`date`, `total`, `subtotal`, `vattype`, `vatpercentage`, `vatamount`, `invoicenum`, `dispatchnum`, `porder_id`, `status`, `confirm_status`, `updatedatetime`, `tbl_user_idtbl_user`, `tbl_location_idtbl_location`, `tbl_supplier_idtbl_supplier`)
+    VALUES ('$grndate','$grnnettotal','$grnsubtotal','$grnvattype','$grnvatpercentage','$grnvatamount','$grninvoice','$grndispatch','$porderIdVal','1','0','$updatedatetime','$userID','$locationID','$supplierIdVal')";
 
 if($conn->query($insertgrn)==true){
     $grnid=$conn->insert_id;

@@ -7,6 +7,7 @@ $grnid=intval($_POST['grnid']);
 $confirmstatus=intval($_POST['confirmstatus']);
 
 $sqlheader="SELECT g.`date`, g.`invoicenum`, g.`dispatchnum`, g.`confirm_status`, g.`porder_id`,
+        g.`subtotal`, g.`vattype`, g.`vatpercentage`, g.`vatamount`, g.`total`,
         l.`location`, l.`code`,
         s.`suppliername`
     FROM `tbl_grn` AS g
@@ -16,6 +17,8 @@ $sqlheader="SELECT g.`date`, g.`invoicenum`, g.`dispatchnum`, g.`confirm_status`
     WHERE g.`idtbl_grn` = '$grnid'";
 $resultheader = $conn->query($sqlheader);
 $rowheader = $resultheader->fetch_assoc();
+
+$vatLabel = ($rowheader['vattype'] == 2) ? 'Inclusive' : 'Exclusive';
 
 $sql="SELECT `tbl_grndetail`.`qty`, `tbl_grndetail`.`unitprice`, `tbl_grndetail`.`total`, `tbl_product`.`product_name`, `tbl_product`.`idtbl_product`
     FROM `tbl_grndetail`
@@ -57,9 +60,27 @@ $result=$conn->query($sql);
         <?php } ?>
     </tbody>
 </table>
+
+<div class="row" id="grndetailtotals">
+
+    <?php if ($rowheader['vattype'] == 1) { ?>
+    <div class="col-8 text-right">Sub Total :</div>
+    <div class="col-4 text-right" id="grnSubTotalDisplay"><?php echo number_format($rowheader['subtotal'], 2); ?></div>
+
+    <div class="col-8 text-right">VAT (<?php echo $vatLabel; ?> - <?php echo number_format($rowheader['vatpercentage'], 2); ?>%) :</div>
+    <div class="col-4 text-right" id="grnVatAmountDisplay"><?php echo number_format($rowheader['vatamount'], 2); ?></div>
+
+    <?php } ?>
+
+    <div class="col-8 text-right"><strong>Grand Total :</strong></div>
+    <div class="col-4 text-right" id="grnGrandTotalDisplay"><strong><?php echo number_format($rowheader['total'], 2); ?></strong></div>
+</div>
+    <div class="col-12"><hr class="my-1"></div>
 <button class="btn btn-danger btn-sm fa-pull-right" id="btnPrintGrn"><i class="fas fa-print"></i>&nbsp;Print GRN</button>
 
 <input type="hidden" id="hiddengrnid" value="<?php echo $grnid ?>">
+<input type="hidden" id="hiddengrnvattype" value="<?php echo $rowheader['vattype'] ?>">
+<input type="hidden" id="hiddengrnvatpercentage" value="<?php echo $rowheader['vatpercentage'] ?>">
 <script>
     $('#grndetailsstable tbody').off('click', '.editnewqty').on('click', '.editnewqty', function(e) {
         e.preventDefault();
@@ -95,8 +116,44 @@ $result=$conn->query($sql);
 
                 tr.find('td:eq(4)').text(totnewComma);
                 tr.find('td:eq(6)').text(totnew);
+
+                recalcGrnDetailTotals();
             }
         });
+    }
+
+    // Recomputes Sub Total / VAT / Grand Total from the (possibly edited)
+    // line totals, using the same Inclusive/Exclusive logic as the
+    // Create GRN modal's tabletotal().
+    function recalcGrnDetailTotals() {
+        var sum = 0;
+        $('#grndetailsstable tbody tr').each(function() {
+            var lineTotal = parseFloat($(this).find('td:eq(6)').text());
+            if (!isNaN(lineTotal)) { sum += lineTotal; }
+        });
+        if (isNaN(sum)) sum = 0;
+
+        var vatType = parseInt($('#hiddengrnvattype').val());
+        var vatPercent = parseFloat($('#hiddengrnvatpercentage').val());
+        if (isNaN(vatPercent)) vatPercent = 0;
+
+        var subTotal, vatAmount, grandTotal;
+
+        if (vatType == 2) {
+            // Inclusive - line amounts already include VAT
+            grandTotal = sum;
+            subTotal = vatPercent > 0 ? (sum / (1 + (vatPercent / 100))) : sum;
+            vatAmount = grandTotal - subTotal;
+        } else {
+            // Exclusive - line amounts are before VAT
+            subTotal = sum;
+            vatAmount = subTotal * (vatPercent / 100);
+            grandTotal = subTotal + vatAmount;
+        }
+
+        $('#grnSubTotalDisplay').text(subTotal.toFixed(2));
+        $('#grnVatAmountDisplay').text(vatAmount.toFixed(2));
+        $('#grnGrandTotalDisplay').html('<strong>' + grandTotal.toFixed(2) + '</strong>');
     }
 
     $('#btnPrintGrn').off('click').on('click', function(){

@@ -2,9 +2,9 @@
 session_start();
 /*
  * Server-side processing for the GRN DETAIL-WISE report (grnreport.php DataTable).
- * Unlike grnlist.php (one row per GRN header), this returns one row per GRN
- * line item, joined against the GRN header, supplier, product, and location
- * tables. Follows the same ssp.customized.class.php pattern used elsewhere.
+ * Unlike the GRN header list, this returns one row per GRN line item, joined
+ * against the GRN header, supplier, product, and location tables. Follows the
+ * same ssp.customized.class.php pattern used elsewhere.
  *
  * Filtered to the logged-in user's location via $_SESSION['location_id'],
  * same as the create-GRN page.
@@ -55,7 +55,7 @@ $sql_details = array(
 
 require('ssp.customized.class.php');
 
-// Location comes from session, same convention as grn.php / grnlist.php.
+// Location comes from session, same convention as grn.php.
 // Cast to int since it feeds directly into the WHERE clause below.
 $locationID = (int) $_SESSION['location_id'];
 
@@ -63,9 +63,8 @@ $locationID = (int) $_SESSION['location_id'];
 // g   = tbl_grn        (the GRN header - date, invoice/dispatch no, status)
 // po  = tbl_porder     (only used to fall back to the PO's supplier)
 // s   = tbl_supplier   (resolved from the GRN's own supplier first, falling
-//                        back to the linked PO's supplier - same logic as
-//                        grnlist.php, needed because "Without PO" GRNs store
-//                        the supplier directly on tbl_grn)
+//                        back to the linked PO's supplier - needed because
+//                        "Without PO" GRNs store the supplier directly on tbl_grn)
 // l   = tbl_location
 // p   = tbl_product    (product on each line item)
 $joinQuery = "FROM `tbl_grndetail` AS `gd`
@@ -79,35 +78,20 @@ $joinQuery = "FROM `tbl_grndetail` AS `gd`
 // don't leak into the report; location filter matches the session location.
 $extraWhere = "`g`.`status` = 1 AND `gd`.`status` = 1 AND `g`.`tbl_location_idtbl_location` = $locationID";
 
-if (!empty($_POST['search_date'])) {
-    $date = $_POST['search_date'];
-    $extraWhere .= " AND `g`.`date` = '$date'";
-} elseif (!empty($_POST['search_week'])) {
-    $week = $_POST['search_week'];
-    $weeksep = explode('-W', $week);
-    $year = $weeksep[0];
-    $week1 = $weeksep[1];
-    $dto = new DateTime();
-    $dto->setISODate($year, $week1);
-    $startDate = $dto->format('Y-m-d');
-    $dto->modify('+6 days');
-    $endDate = $dto->format('Y-m-d');
-
-    $extraWhere .= " AND `g`.`date` BETWEEN '$startDate' AND '$endDate'";
-} elseif (!empty($_POST['search_month'])) {
-    $month = $_POST['search_month'];
-    $month_arr = explode('-', $month);
-    $extraWhere .= " AND YEAR(`g`.`date`) = '$month_arr[0]' AND MONTH(`g`.`date`) = '$month_arr[1]'";
-} elseif (!empty($_POST['search_from_date']) && !empty($_POST['search_to_date'])) {
-    $from_date = $_POST['search_from_date'];
-    $to_date = $_POST['search_to_date'];
-
-    $extraWhere .= " AND `g`.`date` BETWEEN '$from_date' AND '$to_date'";
+// GRN number search - accepts "GRN-12", "grn12" or "12".
+// Everything except digits is stripped, then matched exactly on the GRN id.
+if (isset($_POST['search_grn']) && trim($_POST['search_grn']) !== '') {
+    $grnID = (int) preg_replace('/\D/', '', $_POST['search_grn']);
+    if ($grnID > 0) {
+        $extraWhere .= " AND `g`.`idtbl_grn` = $grnID";
+    } else {
+        // Text with no number in it (e.g. "abc") should return nothing
+        $extraWhere .= " AND 1 = 0";
+    }
 }
 
-// Optional extra filters for a "full detail" report - supplier and product,
-// on top of the date-range filters above. Add the matching <select> inputs
-// on the report page and they'll be picked up automatically.
+// Optional extra filters - supplier and product. Add the matching <select>
+// inputs on the report page and they'll be picked up automatically.
 if (!empty($_POST['search_supplier'])) {
     $supplierID = (int) $_POST['search_supplier'];
     $extraWhere .= " AND COALESCE(`g`.`tbl_supplier_idtbl_supplier`, `po`.`tbl_supplier_idtbl_supplier`) = $supplierID";
@@ -116,11 +100,6 @@ if (!empty($_POST['search_supplier'])) {
 if (!empty($_POST['search_product'])) {
     $productID = (int) $_POST['search_product'];
     $extraWhere .= " AND `gd`.`tbl_product_idtbl_product` = $productID";
-}
-
-if (!empty($_POST['search_grn'])) {
-    $grnID = (int) $_POST['search_grn'];
-    $extraWhere .= " AND `g`.`idtbl_grn` = $grnID";
 }
 
 echo json_encode(
