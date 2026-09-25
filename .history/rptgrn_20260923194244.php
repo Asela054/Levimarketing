@@ -42,10 +42,9 @@ include "include/topnavbar.php";
                                             <label class="small font-weight-bold text-dark">GRN Number</label>
                                             <input type="text" class="form-control form-control-sm" name="grnno" id="grnno" placeholder="e.g. GRN-12" autocomplete="off">
                                         </div>
-                                        <div class="col-3 mt-1">&nbsp;<br>
-                                            <button type="submit" class="btn btn-primary btn-sm" id="btnSearch"><i class="fas fa-search"></i>&nbsp;Search</button>
-                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btnreset"><i class="fas fa-redo"></i>&nbsp;Reset</button>
-
+                                        <div class="col-3">&nbsp;<br>
+                                            <button type="submit" class="btn btn-info btn-sm"><i class="fas fa-search"></i>&nbsp;Search</button>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btnreset">Reset</button>
                                         </div>
                                     </div>
                                 </form>
@@ -123,8 +122,8 @@ $(document).ready(function () {
             { "data": "product_name" },
             { "data": "type" },
             { "data": "qty" },
-            { "className": 'text-right', "data": "unitprice", "render": formatMoney },
-            { "className": 'text-right', "data": "total", "render": formatMoney }
+            { "className": 'text-right', "data": "unitprice" },
+            { "className": 'text-right', "data": "total" }
         ],
         dom: "<'row'<'col-sm-4'B><'col-sm-3'l><'col-sm-5'f>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
         responsive: true,
@@ -190,7 +189,7 @@ $(document).ready(function () {
                     return intVal(a) + intVal(b);
                 }, 0);
 
-            $(api.column(9).footer()).html('Rs ' + addCommas(pageTotal.toFixed(2)));
+            $(api.column(9).footer()).html('Rs ' + pageTotal.toFixed(2));
         },
         drawCallback: function (settings) {
             $('[data-toggle="tooltip"]').tooltip();
@@ -207,25 +206,6 @@ $(document).ready(function () {
         grnTable.ajax.reload();
     });
 });
-
-function addCommas(nStr) {
-    nStr += '';
-    var x = nStr.split('.');
-    var x1 = x[0];
-    var x2 = x.length > 1 ? '.' + x[1] : '';
-    var rgx = /(\d+)(\d{3})/;
-    while (rgx.test(x1)) {
-        x1 = x1.replace(rgx, '$1' + ',' + '$2');
-    }
-    return x1 + x2;
-}
-
-// Formats for display only, so sorting still uses the raw number
-function formatMoney(data, type) {
-    if (type !== 'display') { return data; }
-    var n = parseFloat(data);
-    return addCommas((isNaN(n) ? 0 : n).toFixed(2));
-}
 </script>
 
 <?php include "include/footer.php"; ?>

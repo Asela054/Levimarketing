@@ -18,6 +18,7 @@ $sqlheader="SELECT g.`date`, g.`invoicenum`, g.`dispatchnum`, g.`confirm_status`
 $resultheader = $conn->query($sqlheader);
 $rowheader = $resultheader->fetch_assoc();
 
+// vattype: 1 = Exclusive, 2 = Inclusive (matches tbl_grn.vattype convention)
 $vatLabel = ($rowheader['vattype'] == 2) ? 'Inclusive' : 'Exclusive';
 
 $sql="SELECT `tbl_grndetail`.`qty`, `tbl_grndetail`.`unitprice`, `tbl_grndetail`.`total`, `tbl_product`.`product_name`, `tbl_product`.`idtbl_product`

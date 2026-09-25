@@ -326,7 +326,7 @@ include "include/topnavbar.php";
             "pageLength": 25,
             "stateSave": true,
             ajax: {
-                url: "scripts/goodreceivelist.php",
+                url: "scripts/goodlist.php",
                 type: "POST",
                 cache: true
             },
@@ -358,10 +358,7 @@ include "include/topnavbar.php";
                 {
                     "targets": -1, "className": 'text-right', "data": null,
                     "render": function (data, type, full) {
-                        // vattype: 1 = Exclusive, 2 = Inclusive
-                        // For inclusive GRNs, show the total here so it doesn't look like a mismatch
-                        var value = (full['vattype'] == 2) ? full['total'] : full['subtotal'];
-                        return addCommas((parseFloat(value) || 0).toFixed(2));
+                        return parseFloat(full['subtotal']).toFixed(2);
                     }
                 },
                 {
@@ -375,7 +372,7 @@ include "include/topnavbar.php";
                 {
                     "targets": -1, "className": 'text-right', "data": null,
                     "render": function (data, type, full) {
-                        return addCommas((parseFloat(full['total']) || 0).toFixed(2));
+                        return parseFloat(full['total']).toFixed(2);
                     }
                 },
                 {
@@ -657,9 +654,6 @@ include "include/topnavbar.php";
         if (td.data('editing')) return;
 
         var val = td.text();
-        if (type === 'price') {
-            val = val.replace(/,/g, '');
-        }
         td.empty();
         td.data('editing', true);
 

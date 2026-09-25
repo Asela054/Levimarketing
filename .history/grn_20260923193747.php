@@ -375,7 +375,7 @@ include "include/topnavbar.php";
                 {
                     "targets": -1, "className": 'text-right', "data": null,
                     "render": function (data, type, full) {
-                        return addCommas((parseFloat(full['total']) || 0).toFixed(2));
+                        return parseFloat(full['total']).toFixed(2);
                     }
                 },
                 {

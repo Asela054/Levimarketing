@@ -18,6 +18,7 @@ $sqlheader="SELECT g.`date`, g.`invoicenum`, g.`dispatchnum`, g.`confirm_status`
 $resultheader = $conn->query($sqlheader);
 $rowheader = $resultheader->fetch_assoc();
 
+// vattype: 1 = Exclusive, 2 = Inclusive (matches tbl_grn.vattype convention)
 $vatLabel = ($rowheader['vattype'] == 2) ? 'Inclusive' : 'Exclusive';
 
 $sql="SELECT `tbl_grndetail`.`qty`, `tbl_grndetail`.`unitprice`, `tbl_grndetail`.`total`, `tbl_product`.`product_name`, `tbl_product`.`idtbl_product`
@@ -63,19 +64,19 @@ $result=$conn->query($sql);
 
 <div class="row" id="grndetailtotals">
 
-    <?php if ($rowheader['vattype'] == 1) { ?>
+<? p
     <div class="col-8 text-right">Sub Total :</div>
     <div class="col-4 text-right" id="grnSubTotalDisplay"><?php echo number_format($rowheader['subtotal'], 2); ?></div>
 
     <div class="col-8 text-right">VAT (<?php echo $vatLabel; ?> - <?php echo number_format($rowheader['vatpercentage'], 2); ?>%) :</div>
     <div class="col-4 text-right" id="grnVatAmountDisplay"><?php echo number_format($rowheader['vatamount'], 2); ?></div>
 
-    <?php } ?>
+    <div class="col-12"><hr class="my-1"></div>
 
     <div class="col-8 text-right"><strong>Grand Total :</strong></div>
     <div class="col-4 text-right" id="grnGrandTotalDisplay"><strong><?php echo number_format($rowheader['total'], 2); ?></strong></div>
 </div>
-    <div class="col-12"><hr class="my-1"></div>
+
 <button class="btn btn-danger btn-sm fa-pull-right" id="btnPrintGrn"><i class="fas fa-print"></i>&nbsp;Print GRN</button>
 
 <input type="hidden" id="hiddengrnid" value="<?php echo $grnid ?>">

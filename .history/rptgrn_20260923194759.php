@@ -42,7 +42,7 @@ include "include/topnavbar.php";
                                             <label class="small font-weight-bold text-dark">GRN Number</label>
                                             <input type="text" class="form-control form-control-sm" name="grnno" id="grnno" placeholder="e.g. GRN-12" autocomplete="off">
                                         </div>
-                                        <div class="col-3 mt-1">&nbsp;<br>
+                                        <div class="col-auto">&nbsp;
                                             <button type="submit" class="btn btn-primary btn-sm" id="btnSearch"><i class="fas fa-search"></i>&nbsp;Search</button>
                                             <button type="button" class="btn btn-outline-secondary btn-sm" id="btnreset"><i class="fas fa-redo"></i>&nbsp;Reset</button>
 

@@ -355,15 +355,16 @@ include "include/topnavbar.php";
                 { "data": "location" },
                 { "data": "invoicenum" },
                 { "data": "dispatchnum" },
-                {
-                    "targets": -1, "className": 'text-right', "data": null,
-                    "render": function (data, type, full) {
-                        // vattype: 1 = Exclusive, 2 = Inclusive
-                        // For inclusive GRNs, show the total here so it doesn't look like a mismatch
-                        var value = (full['vattype'] == 2) ? full['total'] : full['subtotal'];
-                        return addCommas((parseFloat(value) || 0).toFixed(2));
-                    }
-                },
+// Sub Total column
+{
+    "targets": -1, "className": 'text-right', "data": null,
+    "render": function (data, type, full) {
+        // vattype: 1 = Exclusive, 2 = Inclusive
+        // For inclusive GRNs, show the total here so it doesn't look like a mismatch
+        var value = (full['vattype'] == 2) ? full['total'] : full['subtotal'];
+        return addCommas((parseFloat(value) || 0).toFixed(2));
+    }
+},
                 {
                     "targets": -1, "className": 'text-center', "data": null,
                     "render": function (data, type, full) {
@@ -375,7 +376,7 @@ include "include/topnavbar.php";
                 {
                     "targets": -1, "className": 'text-right', "data": null,
                     "render": function (data, type, full) {
-                        return addCommas((parseFloat(full['total']) || 0).toFixed(2));
+                        return parseFloat(full['total']).toFixed(2);
                     }
                 },
                 {

@@ -152,13 +152,12 @@ include "include/topnavbar.php";
                             <hr>
                             <div class="form-group mb-2">
                                 <label class="small font-weight-bold text-dark">VAT Type*</label><br>
-                                <!-- vattype: 1 = Exclusive, 2 = Inclusive (matches tbl_grn.vattype convention) -->
                                 <div class="custom-control custom-radio custom-control-inline">
-                                    <input type="radio" id="vatexclusive" name="vattype" class="custom-control-input" value="1" checked>
+                                    <input type="radio" id="vatexclusive" name="vattype" class="custom-control-input" value="0" checked>
                                     <label class="custom-control-label font-weight-bold" for="vatexclusive">VAT Exclusive</label>
                                 </div>
                                 <div class="custom-control custom-radio custom-control-inline">
-                                    <input type="radio" id="vatinclusive" name="vattype" class="custom-control-input" value="2">
+                                    <input type="radio" id="vatinclusive" name="vattype" class="custom-control-input" value="1">
                                     <label class="custom-control-label font-weight-bold" for="vatinclusive">VAT Inclusive</label>
                                 </div>
                             </div>
@@ -210,7 +209,6 @@ include "include/topnavbar.php";
                                     <th class="text-center">Qty</th>
                                     <th class="d-none">Hidetotal</th>
                                     <th class="text-right">Total</th>
-                                    <th class="text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="tbodygrncreate"></tbody>
@@ -326,7 +324,7 @@ include "include/topnavbar.php";
             "pageLength": 25,
             "stateSave": true,
             ajax: {
-                url: "scripts/goodreceivelist.php",
+                url: "scripts/grnlist.php",
                 type: "POST",
                 cache: true
             },
@@ -358,24 +356,20 @@ include "include/topnavbar.php";
                 {
                     "targets": -1, "className": 'text-right', "data": null,
                     "render": function (data, type, full) {
-                        // vattype: 1 = Exclusive, 2 = Inclusive
-                        // For inclusive GRNs, show the total here so it doesn't look like a mismatch
-                        var value = (full['vattype'] == 2) ? full['total'] : full['subtotal'];
-                        return addCommas((parseFloat(value) || 0).toFixed(2));
+                        return parseFloat(full['subtotal']).toFixed(2);
                     }
                 },
                 {
                     "targets": -1, "className": 'text-center', "data": null,
                     "render": function (data, type, full) {
-                        // vattype: 1 = Exclusive, 2 = Inclusive
-                        var label = (full['vattype'] == 2) ? 'Incl' : 'Excl';
+                        var label = (full['vattype'] == 1) ? 'Incl' : 'Excl';
                         return label + ' (' + parseFloat(full['vatpercentage']).toFixed(2) + '%)';
                     }
                 },
                 {
                     "targets": -1, "className": 'text-right', "data": null,
                     "render": function (data, type, full) {
-                        return addCommas((parseFloat(full['total']) || 0).toFixed(2));
+                        return parseFloat(full['total']).toFixed(2);
                     }
                 },
                 {
@@ -457,7 +451,6 @@ include "include/topnavbar.php";
                 url: 'getprocess/getporderinfoforgrn.php',
                 success: function(result) {
                     $('#tbodygrncreate').html(result);
-                    normalizeGrnRows();
                     tabletotal();
                     orderoption();
                 }
@@ -508,8 +501,7 @@ include "include/topnavbar.php";
                 '</td><td class="text-right editunitprice">' + parseFloat(unitprice).toFixed(2) +
                 '</td><td class="text-center editnewqty">' + newqty +
                 '</td><td class="total d-none">' + total +
-                '</td><td class="text-right">' + showtotal +
-                '</td><td class="text-center no-capture"><button type="button" class="btn btn-outline-danger btn-sm btndeleterow" title="Remove"><i class="fas fa-trash"></i></button></td></tr>'
+                '</td><td class="text-right">' + showtotal + '</td></tr>'
             );
 
             $('#grnproduct').val(null).trigger('change');
@@ -524,7 +516,7 @@ include "include/topnavbar.php";
         $('input[name="vattype"]').on('change', function() {
             tabletotal();
         });
-        $('#grnvatpercentage').on('input change', function() {
+        $('#grnvatpercentage').on('keyup change', function() {
             tabletotal();
         });
 
@@ -543,7 +535,7 @@ include "include/topnavbar.php";
             jsonObj = [];
             $("#tableGrnList tbody tr").each(function() {
                 item = {}
-                $(this).find('td:not(".no-capture")').each(function(col_idx) {
+                $(this).find('td').each(function(col_idx) {
                     item["col_" + (col_idx + 1)] = $(this).text();
                 });
                 jsonObj.push(item);
@@ -557,7 +549,7 @@ include "include/topnavbar.php";
             var grndate = $('#grndate').val();
             var grninvoice = $('#grninvoice').val();
             var grndispatch = $('#grndispatch').val();
-            var grnvattype = $('input[name="vattype"]:checked').val(); // "1" or "2"
+            var grnvattype = $('input[name="vattype"]:checked').val();
             var grnvatpercentage = $('#grnvatpercentage').val();
             var grnsubtotal = $('#txtShowSubTotal').val();
             var grnvatamount = $('#txtShowVatAmount').val();
@@ -609,109 +601,89 @@ include "include/topnavbar.php";
         });
     });
 
-    // Ensures every row in #tbodygrncreate - whether built here in JS (Without PO)
-    // or injected from getporderinfoforgrn.php (With PO) - has editable price/qty
-    // classes and a delete button, without needing to touch that PHP file.
-    function normalizeGrnRows(){
-        $('#tbodygrncreate tr').each(function(){
-            var tr = $(this);
-            var tds = tr.find('td');
-            if (tds.length < 7) { return; }
-
-            var priceTd = tds.eq(3);
-            var qtyTd = tds.eq(4);
-
-            if (!priceTd.hasClass('editunitprice')) { priceTd.addClass('editunitprice'); }
-            if (!qtyTd.hasClass('editnewqty')) { qtyTd.addClass('editnewqty'); }
-
-            if (tds.length < 8) {
-                tr.append('<td class="text-center no-capture"><button type="button" class="btn btn-outline-danger btn-sm btndeleterow" title="Remove"><i class="fas fa-trash"></i></button></td>');
-            }
-        });
-    }
-
     function orderoption(){
         $('#tbodygrncreate').off('click', '.editnewqty').on('click', '.editnewqty', function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
-            makeCellEditable($(this), 'qty');
+
+            $this = $(this);
+            if ($this.data('editing')) return;
+
+            var val = $this.text();
+
+            $this.empty();
+            $this.data('editing', true);
+
+            $('<input type="Text" class="form-control form-control-sm optionnewqty">').val(val).appendTo($this);
+            textremove('.optionnewqty', $this);
         });
 
         $('#tbodygrncreate').off('click', '.editunitprice').on('click', '.editunitprice', function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
-            makeCellEditable($(this), 'price');
-        });
 
-        $('#tbodygrncreate').off('click', '.btndeleterow').on('click', '.btndeleterow', function(e) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            $(this).closest('tr').remove();
-            tabletotal();
+            $this = $(this);
+            if ($this.data('editing')) return;
+
+            var val = $this.text();
+
+            $this.empty();
+            $this.data('editing', true);
+
+            $('<input type="Text" class="form-control form-control-sm optionunitprice">').val(val).appendTo($this);
+            pricetextremove('.optionunitprice', $this);
         });
     }
 
-    // Turns a qty/price cell into an input, recalculates totals live as the
-    // user types, and commits back to plain text on blur or Enter.
-    function makeCellEditable(td, type) {
-        if (td.data('editing')) return;
+    function textremove(classname, row) {
+        $('#tbodygrncreate').off('keyup', classname).on('keyup', classname, function(e) {
+            if (e.keyCode === 13) { 
+                $this = $(this);
+                var val = $this.val();
+                var td = $this.closest('td');
+                td.empty().html(val).data('editing', false);
 
-        var val = td.text();
-        if (type === 'price') {
-            val = val.replace(/,/g, '');
-        }
-        td.empty();
-        td.data('editing', true);
+                var tr = td.closest('tr');
+                var rowID = tr[0].rowIndex;
+                var unitprice = parseFloat(tr.find('td:eq(2)').text());
+                var editqty = parseFloat(tr.find('td:eq(4)').text());
 
-        var inputClass = (type === 'qty') ? 'optionnewqty' : 'optionunitprice';
-        var $input = $('<input type="text" class="form-control form-control-sm ' + inputClass + '">').val(val);
-        $input.appendTo(td);
-        $input.trigger('focus');
+                var totnew = unitprice*editqty;
+                var total = parseFloat(totnew).toFixed(2);
+                var showtotal = addCommas(total);
 
-        function liveRecalc() {
-            var newVal = parseFloat($input.val());
-            if (isNaN(newVal) || newVal < 0) { newVal = 0; }
+                tr.find('td:eq(5)').text(totnew);
+                tr.find('td:eq(6)').text(showtotal);
 
-            var tr = td.closest('tr');
-            var qty, price;
-
-            if (type === 'qty') {
-                qty = newVal;
-                price = parseFloat(tr.find('td:eq(2)').text()) || 0;
-            } else {
-                price = newVal;
-                qty = parseFloat(tr.find('td:eq(4)').text()) || 0;
+                tabletotal();
             }
-
-            var totnew = price * qty;
-            tr.find('td:eq(5)').text(totnew);
-            tr.find('td:eq(6)').text(addCommas(totnew.toFixed(2)));
-
-            tabletotal();
-        }
-
-        function commit() {
-            var newVal = parseFloat($input.val());
-            if (isNaN(newVal) || newVal < 0) { newVal = 0; }
-
-            var tr = td.closest('tr');
-            td.data('editing', false);
-
-            if (type === 'qty') {
-                td.html(newVal);
-            } else {
-                td.html(newVal.toFixed(2));
-                tr.find('td:eq(2)').text(newVal); // hidden unitprice cell used for save
-            }
-
-            liveRecalc();
-        }
-
-        $input.on('input', liveRecalc);
-        $input.on('keyup', function(e) {
-            if (e.keyCode === 13) { commit(); }
         });
-        $input.on('blur', commit);
+    }
+
+    function pricetextremove(classname, row) {
+        $('#tbodygrncreate').off('keyup', classname).on('keyup', classname, function(e) {
+            if (e.keyCode === 13) {
+                $this = $(this);
+                var val = parseFloat($this.val());
+                if (isNaN(val) || val < 0) { val = 0; }
+
+                var td = $this.closest('td');
+                td.empty().html(val.toFixed(2)).data('editing', false);
+
+                var tr = td.closest('tr');
+                tr.find('td:eq(2)').text(val); // hidden unitprice cell used for calc/save
+
+                var editqty = parseFloat(tr.find('td:eq(4)').text());
+                var totnew = val * editqty;
+                var total = parseFloat(totnew).toFixed(2);
+                var showtotal = addCommas(total);
+
+                tr.find('td:eq(5)').text(totnew);
+                tr.find('td:eq(6)').text(showtotal);
+
+                tabletotal();
+            }
+        });
     }
 
     function action(data) {

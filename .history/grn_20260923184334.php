@@ -152,13 +152,12 @@ include "include/topnavbar.php";
                             <hr>
                             <div class="form-group mb-2">
                                 <label class="small font-weight-bold text-dark">VAT Type*</label><br>
-                                <!-- vattype: 1 = Exclusive, 2 = Inclusive (matches tbl_grn.vattype convention) -->
                                 <div class="custom-control custom-radio custom-control-inline">
-                                    <input type="radio" id="vatexclusive" name="vattype" class="custom-control-input" value="1" checked>
+                                    <input type="radio" id="vatexclusive" name="vattype" class="custom-control-input" value="0" checked>
                                     <label class="custom-control-label font-weight-bold" for="vatexclusive">VAT Exclusive</label>
                                 </div>
                                 <div class="custom-control custom-radio custom-control-inline">
-                                    <input type="radio" id="vatinclusive" name="vattype" class="custom-control-input" value="2">
+                                    <input type="radio" id="vatinclusive" name="vattype" class="custom-control-input" value="1">
                                     <label class="custom-control-label font-weight-bold" for="vatinclusive">VAT Inclusive</label>
                                 </div>
                             </div>
@@ -326,7 +325,7 @@ include "include/topnavbar.php";
             "pageLength": 25,
             "stateSave": true,
             ajax: {
-                url: "scripts/goodreceivelist.php",
+                url: "scripts/grnlist.php",
                 type: "POST",
                 cache: true
             },
@@ -358,24 +357,20 @@ include "include/topnavbar.php";
                 {
                     "targets": -1, "className": 'text-right', "data": null,
                     "render": function (data, type, full) {
-                        // vattype: 1 = Exclusive, 2 = Inclusive
-                        // For inclusive GRNs, show the total here so it doesn't look like a mismatch
-                        var value = (full['vattype'] == 2) ? full['total'] : full['subtotal'];
-                        return addCommas((parseFloat(value) || 0).toFixed(2));
+                        return parseFloat(full['subtotal']).toFixed(2);
                     }
                 },
                 {
                     "targets": -1, "className": 'text-center', "data": null,
                     "render": function (data, type, full) {
-                        // vattype: 1 = Exclusive, 2 = Inclusive
-                        var label = (full['vattype'] == 2) ? 'Incl' : 'Excl';
+                        var label = (full['vattype'] == 1) ? 'Incl' : 'Excl';
                         return label + ' (' + parseFloat(full['vatpercentage']).toFixed(2) + '%)';
                     }
                 },
                 {
                     "targets": -1, "className": 'text-right', "data": null,
                     "render": function (data, type, full) {
-                        return addCommas((parseFloat(full['total']) || 0).toFixed(2));
+                        return parseFloat(full['total']).toFixed(2);
                     }
                 },
                 {
@@ -557,7 +552,7 @@ include "include/topnavbar.php";
             var grndate = $('#grndate').val();
             var grninvoice = $('#grninvoice').val();
             var grndispatch = $('#grndispatch').val();
-            var grnvattype = $('input[name="vattype"]:checked').val(); // "1" or "2"
+            var grnvattype = $('input[name="vattype"]:checked').val();
             var grnvatpercentage = $('#grnvatpercentage').val();
             var grnsubtotal = $('#txtShowSubTotal').val();
             var grnvatamount = $('#txtShowVatAmount').val();
@@ -657,9 +652,6 @@ include "include/topnavbar.php";
         if (td.data('editing')) return;
 
         var val = td.text();
-        if (type === 'price') {
-            val = val.replace(/,/g, '');
-        }
         td.empty();
         td.data('editing', true);
 

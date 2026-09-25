@@ -372,6 +372,7 @@ include "include/topnavbar.php";
                         return label + ' (' + parseFloat(full['vatpercentage']).toFixed(2) + '%)';
                     }
                 },
+                // Total column
                 {
                     "targets": -1, "className": 'text-right', "data": null,
                     "render": function (data, type, full) {
