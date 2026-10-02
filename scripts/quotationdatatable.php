@@ -1,5 +1,5 @@
 <?php
-
+session_start();
 /*
  * DataTables server-side processing script for Quotations.
  * Follows the same SSP::simple pattern used across the project (e.g. supplier,
@@ -45,10 +45,11 @@ $sql_details = array(
  */
 
 require('ssp.customized.class.php');
+$locationID = (int) $_SESSION['location_id'];
 
 $joinQuery = "FROM `tbl_quotation` AS `q`
               LEFT JOIN `tbl_customer` AS `c` ON `c`.`idtbl_customer` = `q`.`tbl_customer_idtbl_customer`
-              WHERE `q`.`status` = 1";
+              WHERE `q`.`status` = 1  AND `q`.`tbl_location_idtbl_location` = $locationID";
 
 echo json_encode(
 	SSP::simple( $_POST, $sql_details, $table, $primaryKey, $columns, $joinQuery)
