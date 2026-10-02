@@ -567,19 +567,19 @@ $resultmaincat = $conn->query($sqlmaincat);
 <script type="text/javascript">
     $(document).ready(function () {
         $('#modalretailwholesale').modal('show');
-        $('#qtycount').keyboard();
-        $('#salepriceedit').keyboard();
-        $('#discountpresentage').keyboard();
-        $('#amount').keyboard();
-        $('#bank').keyboard();
-        $('#chequeno').keyboard();
-        $('#externalsearch').keyboard();
-        $('#cusname').keyboard();
-        $('#cusnic').keyboard();
-        $('#cusmobile').keyboard();
-        $('#barcode').keyboard();
-        $('#cardlast4').keyboard(); 
-        $('#onlineref').keyboard();
+        // $('#qtycount').keyboard();
+        // $('#salepriceedit').keyboard();
+        // $('#discountpresentage').keyboard();
+        // $('#amount').keyboard();
+        // $('#bank').keyboard();
+        // $('#chequeno').keyboard();
+        // $('#externalsearch').keyboard();
+        // $('#cusname').keyboard();
+        // $('#cusnic').keyboard();
+        // $('#cusmobile').keyboard();
+        // $('#barcode').keyboard();
+        // $('#cardlast4').keyboard(); 
+        // $('#onlineref').keyboard();
 
         $('#btnretailsale').click(function(){
             $('#saletype').val('1');
