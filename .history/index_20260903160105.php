@@ -46,8 +46,8 @@
 <?php include "include/footerscripts.php"; ?>
 <script type="text/javascript">
     $(document).ready(function () {
-        // $('#username').keyboard();
-        // $('#password').keyboard();
+        $('#username').keyboard();
+        $('#password').keyboard();
     });
 </script>
 <?php include "include/footer.php"; ?>
