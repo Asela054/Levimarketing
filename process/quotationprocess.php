@@ -82,18 +82,16 @@ if ($discountTotal > $total) {
 
 // ---- Whole-bill VAT calculation (mirrors vatinvoiceprocess.php) ----
 if ($vatType === 1) {
-    // Inclusive - extract VAT for display, don't add it again
-    $totalWithVat    = $total - $discountTotal;
-    $netTotal        = $vatPercent > 0 ? ($totalWithVat / (1 + ($vatPercent / 100))) : $totalWithVat;
-    $vatAmount       = $totalWithVat - $netTotal;
-    $netTotalWithVat = $totalWithVat;
+    // Inclusive - prices already include VAT, so no VAT amount is stored
+    $netTotal        = $total - $discountTotal;
+    $vatAmount       = 0;
+    $netTotalWithVat = $netTotal;
 } else {
     // Exclusive - add VAT on top of the discounted net total
     $netTotal        = $total - $discountTotal;
     $vatAmount       = $netTotal * $vatPercent / 100;
     $netTotalWithVat = $netTotal + $vatAmount;
 }
-
 $updatedatetime = date('Y-m-d H:i:s');
 
 // Prefix for quotation numbers, e.g. LVQ-1, LVQ-2, LVQ-3 ...

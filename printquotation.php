@@ -112,6 +112,7 @@ $showVatRows = ($vatType === 2) && $vatPercent > 0;
         vertical-align: top;
         min-height: 20px;
     }
+    table.items tr { page-break-inside: avoid; }
     table.items tr.spacer-row td {
         background: #e4e1f0;
         padding: 4px;
@@ -119,7 +120,6 @@ $showVatRows = ($vatType === 2) && $vatPercent > 0;
     }
     table.items td.num { text-align: center; }
     table.items td.amt { text-align: right; }
-    table.items .filler td { height: 220px; border: 1px solid #000; }
     table.items .total-row td {
         border-top: 2px solid #000;
         font-weight: bold;
@@ -132,6 +132,7 @@ $showVatRows = ($vatType === 2) && $vatPercent > 0;
         margin-left: auto;
         margin-top: 10px;
         border-collapse: collapse;
+        page-break-inside: avoid;
     }
     table.summary td {
         padding: 4px 8px;
@@ -210,7 +211,6 @@ $showVatRows = ($vatType === 2) && $vatPercent > 0;
             <td class="amt"><?php echo money($line['amount']); ?></td>
         </tr>
         <?php endforeach; ?>
-        <tr class="filler"><td></td><td></td><td></td><td></td></tr>
         <tr class="total-row">
             <td class="no-border"></td>
             <td class="no-border"></td>

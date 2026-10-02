@@ -166,7 +166,7 @@ $(document).ready(function () {
 
     // 1 = inclusive (prices already include VAT), 2 = exclusive (VAT added on top)
     function currentVatType() {
-        return $('#vattype').val() || '2';
+        return $('#vattype').val() || '1';
     }
 
     function newProductSelect($el) {
@@ -232,11 +232,10 @@ $(document).ready(function () {
         var netTotal, vatAmount, grandTotal;
 
         if (vatType === '1') {
-            // Inclusive - prices already include VAT, don't add again
-            var totalWithVat = total - discount;
-            netTotal = vatPercent > 0 ? (totalWithVat / (1 + (vatPercent / 100))) : totalWithVat;
-            vatAmount = totalWithVat - netTotal;
-            grandTotal = totalWithVat;
+            // Inclusive - prices already include VAT, no VAT amount shown/saved
+            netTotal = total - discount;
+            vatAmount = 0;
+            grandTotal = netTotal;
         } else {
             // Exclusive - add VAT on top
             netTotal = total - discount;
@@ -361,7 +360,7 @@ $(document).ready(function () {
         $('#customerid').val(null).trigger('change');
         $('#quotationdate').val('<?php echo date('Y-m-d'); ?>');
         $('#discounttotal').val(0);
-        $('#vattype').val('2');
+        $('#vattype').val('1'); // back to Inclusive (same default as page load)
         $('#remarks').val('');
         $('#itemsTableBody').empty();
         rowIndex = 0;
