@@ -1,5 +1,6 @@
 <?php 
 $sessionusertype=$_SESSION['type'];
+$location=$_SESSION['location_name'];
 
 $type =  $_SESSION['privatetype'];
 
@@ -7,8 +8,8 @@ $sqlusertype="SELECT `type` FROM `tbl_user_type` WHERE `idtbl_user_type`='$sessi
 $resultusertype =$conn-> query($sqlusertype);
 $rowusertype = $resultusertype-> fetch_assoc();
 ?>
-<nav class="topnav navbar navbar-expand shadow navbar-light bg-laugfs" id="sidenavAccordion">
-    <a class="navbar-brand d-none d-sm-block menu-logo" href="#">Levi Marketing Pvt Ltd</a><?php if($_SESSION['postype']==0){ ?><button class="btn btn-icon btn-transparent-dark order-1 order-lg-0 mr-lg-2" id="sidebarToggle" href="#"><i class="text-dark" data-feather="menu"></i></button><?php } ?>
+<nav class="topnav navbar navbar-expand shadow navbar-light bg-laugfs" id="sidenavAccordion"><button class="btn btn-icon btn-transparent-dark order-1 order-lg-0 ml-lg-2" id="sidebarToggle" href="#"><i class="text-dark" data-feather="menu"></i></button>
+    <a class="navbar-brand d-none d-sm-block menu-logo" href="#">Levi Marketing Pvt Ltd (<?php echo $location; ?>)</a><?php if($_SESSION['postype']==0){ ?><?php } ?>
     <ul class="navbar-nav align-items-center ml-auto">
     <li class="nav-item dropdown no-caret mr-3 dropdown-user">
         <a class="btn btn-icon btn-transparent-dark dropdown-toggle" href="process/notificationprocess.php">
