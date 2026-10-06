@@ -275,6 +275,13 @@ else if($lastElement=='rptexpensecheque.php'){
     $statuscheck=checkprivilege($menuprivilegearray, 45, 3);
     $deletecheck=checkprivilege($menuprivilegearray, 45, 4);
 }
+else if($lastElement=='rptmonthlysale.php'){
+    $addcheck=checkprivilege($menuprivilegearray, 46, 1);
+    $editcheck=checkprivilege($menuprivilegearray, 46, 2);
+    $statuscheck=checkprivilege($menuprivilegearray, 46, 3);
+    $deletecheck=checkprivilege($menuprivilegearray, 46, 4);
+}
+
 
 
 function checkprivilege($arraymenu, $menuID, $type){
@@ -555,7 +562,7 @@ function checkprivilege($arraymenu, $menuID, $type){
             <?php } } ?>
 
             <!-- Reports -->
-            <?php if(menucheck($menuprivilegearray, 16)==1 | menucheck($menuprivilegearray, 17)==1 | menucheck($menuprivilegearray, 18)==1 | menucheck($menuprivilegearray, 19)==1 | menucheck($menuprivilegearray, 20)==1 | menucheck($menuprivilegearray, 32)==1 | menucheck($menuprivilegearray, 41)==1 | menucheck($menuprivilegearray, 42)==1 | menucheck($menuprivilegearray, 45)==1){ ?>
+            <?php if(menucheck($menuprivilegearray, 16)==1 | menucheck($menuprivilegearray, 17)==1 | menucheck($menuprivilegearray, 18)==1 | menucheck($menuprivilegearray, 19)==1 | menucheck($menuprivilegearray, 20)==1 | menucheck($menuprivilegearray, 32)==1 | menucheck($menuprivilegearray, 41)==1 | menucheck($menuprivilegearray, 42)==1 | menucheck($menuprivilegearray, 45)==1 | menucheck($menuprivilegearray, 46)==1){ ?>
             <div class="sidenav-menu-heading">Reports</div>
             <div class="sidenav-item">
                 <a class="nav-link collapsed" href="javascript:void(0);" data-toggle="collapse"
@@ -564,11 +571,13 @@ function checkprivilege($arraymenu, $menuID, $type){
                     <span class="nav-link-text">Reports</span>
                     <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                 </a>
-                <div class="collapse <?php if($lastElement=="rptgrn.php" | $lastElement=="rptinvoiceview.php" | $lastElement=="rptinvoicepayment.php" | $lastElement=="rptpaymentreceipt.php" | $lastElement=="rptstock.php" | $lastElement=="rptcredit.php" | $lastElement=="rptcustomercreditanalysis.php" | $lastElement=="rptexpensecheque.php"){echo 'show';} ?>"
+                <div class="collapse <?php if($lastElement=="rptgrn.php" | $lastElement=="rptinvoiceview.php" | $lastElement=="rptinvoicepayment.php" | $lastElement=="rptpaymentreceipt.php" | $lastElement=="rptstock.php" | $lastElement=="rptcredit.php" | $lastElement=="rptcustomercreditanalysis.php" | $lastElement=="rptexpensecheque.php" | $lastElement=="rptmonthlysale.php"){echo 'show';} ?>"
                     id="collapsreports" data-parent="#accordionSidenav" data-flyout-title="Reports">
                     <nav class="sidenav-menu-nested nav accordion" id="accordionSidenavPages">
                         <?php if(menucheck($menuprivilegearray, 16)==1){ ?>
                         <a class="nav-link<?php if($lastElement=="rptgrn.php"){echo ' active';} ?>" href="rptgrn.php"><span class="nav-link-text">GRN Report</span></a>
+                        <?php }if(menucheck($menuprivilegearray, 46)==1){ ?>
+                        <a class="nav-link<?php if($lastElement=="rptmonthlysale.php"){echo ' active';} ?>" href="rptmonthlysale.php"><span class="nav-link-text">Monthly Sales Report</span></a>
                         <?php }if(menucheck($menuprivilegearray, 17)==1){ ?>
                         <a class="nav-link<?php if($lastElement=="rptinvoiceview.php"){echo ' active';} ?>" href="rptinvoiceview.php"><span class="nav-link-text">Invoice Report</span></a>
                         <?php }if(menucheck($menuprivilegearray, 18)==1){ ?>

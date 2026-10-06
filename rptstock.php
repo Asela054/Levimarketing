@@ -106,8 +106,8 @@ include "include/topnavbar.php";
                                         <tr>
                                             <th colspan="3" class="text-right">Total Qty:</th>
                                             <th class="text-right"></th>
+                                            <th class="text-right">Total Value:</th>
                                             <th class="text-right"></th>
-                                            <th class="text-right">Grand Total:</th>
                                             <th></th>
                                         </tr>
                                     </tfoot>
@@ -223,17 +223,20 @@ function initStockTable(catId, catName) {
         ],
         footerCallback: function (row, data, start, end, display) {
             var api = this.api();
-            var intVal = function (i) {
-                return typeof i === 'string' ? i.replace(/[\$,]/g, '') * 1 :
-                       typeof i === 'number' ? i : 0;
-            };
-            var qtyPageTotal = api.column(3, { page: 'current' }).data()
-                .reduce(function (a, b) { return intVal(a) + intVal(b); }, 0);
-            $(api.column(3).footer()).html(qtyPageTotal);
 
-            var totalPageTotal = api.column(5, { page: 'current' }).data()
-                .reduce(function (a, b) { return intVal(a) + intVal(b); }, 0);
-            $(api.column(5).footer()).html(addCommas(totalPageTotal.toFixed(2)));
+            // The Total column has "data": null, so api.column(5).data() has nothing
+            // numeric to add up. Sum qty and qty x unitprice from the row objects instead.
+            var qtyTotal = 0;
+            var valueTotal = 0;
+            api.rows({ page: 'current' }).data().each(function (r) {
+                var qty   = parseFloat(r.qty) || 0;
+                var price = parseFloat(r.unitprice) || 0;
+                qtyTotal   += qty;
+                valueTotal += qty * price;
+            });
+
+            $(api.column(3).footer()).html(addCommas(qtyTotal));
+            $(api.column(5).footer()).html(addCommas(valueTotal.toFixed(2)));
         },
         drawCallback: function () {
             $('[data-toggle="tooltip"]').tooltip();

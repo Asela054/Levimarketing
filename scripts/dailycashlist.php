@@ -2,8 +2,8 @@
 
 session_start();
 
-$type = $_SESSION['privatetype'];
-$locationID = $_SESSION['location_id'];
+$type       = $_SESSION['privatetype'];
+$locationID = intval($_SESSION['location_id']);
 
 /*
  * DataTables server-side processing
@@ -17,8 +17,7 @@ $primaryKey = 'idtbl_invoice';
 
 
 // ================================
-// Read payment method filter FIRST
-// (needed before building $columns / $joinQuery)
+// Payment method filter (optional)
 // ================================
 $filterpaymentmethod = null;
 if (isset($_POST['filterpaymentmethod']) && $_POST['filterpaymentmethod'] != '') {
@@ -26,91 +25,95 @@ if (isset($_POST['filterpaymentmethod']) && $_POST['filterpaymentmethod'] != '')
 }
 
 // ================================
-// Decide which column expression to use for "total"
-// Must be aliased AS `total` so MySQL's returned column name
-// matches the 'field' => 'total' key that ssp.customized.class.php looks up.
+// Total is ALWAYS the per-method amount, so an invoice paid by
+// cash + card shows as two rows, each with its own amount.
 // ================================
-if ($filterpaymentmethod !== null) {
-    // Per-invoice amount paid via the selected payment method only
-    $totalDb = '`pm`.`method_total` AS `total`';
-} else {
-    // Normal invoice total (date / sale type only, no payment method filter)
-    $totalDb = '`u`.`total`';
-}
+$totalDb = '`pm`.`method_total` AS `total`';
 
 
+// ================================
 // Columns
-if($type==1){
+// ================================
+if ($type == 1) {
 
     $columns = array(
-        array( 
-            'db' => '`u`.`manuelinvno`', 
-            'dt' => 'id', 
-            'field' => 'manuelinvno' 
+        array(
+            'db'    => '`u`.`manuelinvno`',
+            'dt'    => 'id',
+            'field' => 'manuelinvno'
         ),
-        array( 
-            'db' => '`ud`.`name`',   
-            'dt' => 'name', 
-            'field' => 'name' 
+        array(
+            'db'    => '`ud`.`name`',
+            'dt'    => 'name',
+            'field' => 'name'
         ),
-        array( 
-            'db' => '`u`.`date`', 
-            'dt' => 'date', 
-            'field' => 'date' 
+        array(
+            'db'    => '`u`.`date`',
+            'dt'    => 'date',
+            'field' => 'date'
         ),
-        array( 
-            'db' => '`u`.`saletype`', 
-            'dt' => 'saletype', 
+        array(
+            'db'    => '`u`.`saletype`',
+            'dt'    => 'saletype',
             'field' => 'saletype'
         ),
-        array( 
-            'db' => $totalDb, 
-            'dt' => 'total', 
-            'field' => 'total' 
+        array(
+            'db'    => $totalDb,
+            'dt'    => 'total',
+            'field' => 'total'
         ),
-        array( 
-            'db' => '`u`.`manuelinvno`', 
-            'dt' => 'manuelinvno', 
+        array(
+            'db'    => '`u`.`manuelinvno`',
+            'dt'    => 'manuelinvno',
             'field' => 'manuelinvno'
+        ),
+        array(
+            'db'    => '`pm`.`method`',
+            'dt'    => 'method',
+            'field' => 'method'
         )
     );
 
-}else{
+} else {
 
     $columns = array(
-        array( 
-            'db' => '`u`.`idtbl_invoice`', 
-            'dt' => 'id', 
-            'field' => 'idtbl_invoice' 
+        array(
+            'db'    => '`u`.`idtbl_invoice`',
+            'dt'    => 'id',
+            'field' => 'idtbl_invoice'
         ),
-        array( 
-            'db' => '`ud`.`name`',   
-            'dt' => 'name', 
-            'field' => 'name' 
+        array(
+            'db'    => '`ud`.`name`',
+            'dt'    => 'name',
+            'field' => 'name'
         ),
-        array( 
-            'db' => '`u`.`date`', 
-            'dt' => 'date', 
-            'field' => 'date' 
+        array(
+            'db'    => '`u`.`date`',
+            'dt'    => 'date',
+            'field' => 'date'
         ),
-        array( 
-            'db' => '`u`.`saletype`', 
-            'dt' => 'saletype', 
+        array(
+            'db'    => '`u`.`saletype`',
+            'dt'    => 'saletype',
             'field' => 'saletype'
         ),
-        array( 
-            'db' => $totalDb, 
-            'dt' => 'total', 
-            'field' => 'total' 
+        array(
+            'db'    => $totalDb,
+            'dt'    => 'total',
+            'field' => 'total'
         ),
-        array( 
-            'db' => '`u`.`manuelinvno`', 
-            'dt' => 'manuelinvno', 
+        array(
+            'db'    => '`u`.`manuelinvno`',
+            'dt'    => 'manuelinvno',
             'field' => 'manuelinvno'
+        ),
+        array(
+            'db'    => '`pm`.`method`',
+            'dt'    => 'method',
+            'field' => 'method'
         )
     );
 }
-
 
 
 // Database connection
@@ -123,55 +126,66 @@ $sql_details = array(
     'host' => $db_host
 );
 
-
 require('ssp.customized.class.php');
 
 
 // ================================
 // Join
+// One row per invoice + payment method
 // ================================
 $joinQuery = "
 FROM `tbl_invoice` AS `u`
 LEFT JOIN `tbl_customer` AS `ud`
-ON (`ud`.`idtbl_customer` = `u`.`customerid`)
+    ON (`ud`.`idtbl_customer` = `u`.`customerid`)
+INNER JOIN (
+    SELECT
+        `iphi`.`tbl_invoice_idtbl_invoice` AS `invoice_id`,
+        `ipd`.`method`                     AS `method`,
+        SUM(`ipd`.`amount`)                AS `method_total`
+    FROM `tbl_invoice_payment_has_tbl_invoice` AS `iphi`
+    INNER JOIN `tbl_invoice_payment_detail` AS `ipd`
+        ON `ipd`.`tbl_invoice_payment_idtbl_invoice_payment`
+         = `iphi`.`tbl_invoice_payment_idtbl_invoice_payment`
+    WHERE `ipd`.`status` = 1
 ";
 
-// Only join the derived payment-method-total table when that filter is active
+// Restrict to one method only when the filter is selected
 if ($filterpaymentmethod !== null) {
-    $joinQuery .= "
-    LEFT JOIN (
-        SELECT
-            `iphi`.`tbl_invoice_idtbl_invoice` AS `invoice_id`,
-            SUM(`ipd`.`amount`) AS `method_total`
-        FROM `tbl_invoice_payment_has_tbl_invoice` AS `iphi`
-        INNER JOIN `tbl_invoice_payment_detail` AS `ipd`
-            ON `ipd`.`tbl_invoice_payment_idtbl_invoice_payment`
-             = `iphi`.`tbl_invoice_payment_idtbl_invoice_payment`
-        WHERE `ipd`.`method` = " . $filterpaymentmethod . "
-        GROUP BY `iphi`.`tbl_invoice_idtbl_invoice`
-    ) AS `pm`
+    $joinQuery .= " AND `ipd`.`method` = " . $filterpaymentmethod . " ";
+}
+
+$joinQuery .= "
+    GROUP BY `iphi`.`tbl_invoice_idtbl_invoice`, `ipd`.`method`
+) AS `pm`
     ON `pm`.`invoice_id` = `u`.`idtbl_invoice`
-    ";
+";
+
+
+// ================================
+// Date filter (validated)
+// ================================
+$date = isset($_POST['selectdate']) ? $_POST['selectdate'] : '';
+$dt   = DateTime::createFromFormat('Y-m-d', $date);
+if (!$dt || $dt->format('Y-m-d') !== $date) {
+    $date = date('Y-m-d');
 }
 
 
-// Date filter
-$date = $_POST['selectdate'];
-
-
+// ================================
 // Base condition
-if($type==2){
+// ================================
+if ($type == 2) {
 
     $extraWhere = "
-        `u`.`status` IN (1,2) 
+        `u`.`status` IN (1,2)
         AND `u`.`date` = '$date'
         AND `u`.`tbl_location_idtbl_location` = $locationID
     ";
 
-}else{
+} else {
 
     $extraWhere = "
-        `u`.`status` IN (1,2) 
+        `u`.`status` IN (1,2)
         AND `u`.`date` = '$date'
         AND `u`.`manuelinvno` != 0
         AND `u`.`tbl_location_idtbl_location` = $locationID
@@ -179,49 +193,20 @@ if($type==2){
 }
 
 
-
 // ================================
 // SALE TYPE FILTER
 // ================================
-if(isset($_POST['filtersaletype']) && $_POST['filtersaletype'] != ''){
+if (isset($_POST['filtersaletype']) && $_POST['filtersaletype'] != '') {
 
     $filtersaletype = intval($_POST['filtersaletype']);
 
     $extraWhere .= "
-        AND `u`.`saletype` = ".$filtersaletype."
+        AND `u`.`saletype` = " . $filtersaletype . "
     ";
 }
 
-
-
-// ================================
-// PAYMENT METHOD FILTER
-// Still needed to restrict WHICH invoices appear (the LEFT JOIN above
-// alone wouldn't exclude invoices that don't have that payment method).
-// ================================
-if($filterpaymentmethod !== null){
-
-    $extraWhere .= "
-    AND EXISTS (
-
-        SELECT 1
-
-        FROM `tbl_invoice_payment_has_tbl_invoice` AS `iphi2`
-
-        INNER JOIN `tbl_invoice_payment_detail` AS `ipd2`
-        ON `ipd2`.`tbl_invoice_payment_idtbl_invoice_payment` 
-        = `iphi2`.`tbl_invoice_payment_idtbl_invoice_payment`
-
-        WHERE `iphi2`.`tbl_invoice_idtbl_invoice`
-        = `u`.`idtbl_invoice`
-
-        AND `ipd2`.`method` = ".$filterpaymentmethod."
-
-    )
-    ";
-}
-
-
+// (The old AND EXISTS (...) payment-method block is no longer needed:
+//  the INNER JOIN above already limits invoices to the selected method.)
 
 
 echo json_encode(

@@ -95,7 +95,7 @@ include "include/topnavbar.php";
                                                     <th>DATE</th>
                                                     <th>SALE TYPE</th>
                                                     <th class="text-right">TOTAL PAYMENT</th>
-
+                                                    <th>PAYMENT METHOD</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -105,6 +105,7 @@ include "include/topnavbar.php";
                                                     <th colspan="4"></th>
                                                     <th style="text-align:right">Total:</th>
                                                     <th class="text-right"></th>
+                                                    <th></th>
                                                 </tr>
                                             </tfoot>
                                         </table>
@@ -215,6 +216,19 @@ include "include/topnavbar.php";
                     "data": "total",
                     "className": 'text-right',
                     render: $.fn.dataTable.render.number(',', '.', 2, '')
+                },
+                {
+                    "data": "method",
+                    "className": 'text-left',
+                    "render": function (data) {
+                        var m = {
+                            1: 'Cash',
+                            2: 'Card',
+                            3: 'Cheque',
+                            4: 'Online Transfer'
+                        };
+                        return m[data] || '';
+                    }
                 }
 
             ],
@@ -228,24 +242,21 @@ include "include/topnavbar.php";
                         i : 0;
                 };
 
-                var total = api
-                    .column(5)
-                    .data()
-                    .reduce(function (a, b) {
-                        return intVal(a) + intVal(b);
-                    }, 0);
-
+                // total column is still index 5
                 var pageTotal = api
                     .column(5, {
                         page: 'current'
                     })
                     .data()
                     .reduce(function (a, b) {
-                        return parseFloat(intVal(a) + intVal(b)).toFixed(2);
+                        return intVal(a) + intVal(b);
                     }, 0);
 
                 $(api.column(5).footer()).html(
-                    'Rs ' + pageTotal
+                    'Rs ' + pageTotal.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    })
                 );
             },
             drawCallback: function (settings) {
@@ -269,12 +280,12 @@ include "include/topnavbar.php";
         // bill data submit for process data
         $(document).on("click", "#Btnsubmit", function () {
 
+            var jsonObj = [];
             var tbody = $('#cashdailytbl tbody');
             if (tbody.children().length > 0) {
-                jsonObj = []
 
                 $("#cashdailytbl tbody tr").each(function () {
-                    item = {}
+                    var item = {};
 
                     $(this).find('td').each(function (col_idx) {
                         var r = '';

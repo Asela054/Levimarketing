@@ -55,11 +55,21 @@ include "include/topnavbar.php";
                                             <th>#</th>
                                             <th>Product</th>
                                             <th>Quantity</th>
+                                            <th class="text-right">Unit Price</th>
+                                            <th class="text-right">Total</th>
                                             <th>Location</th>
                                             <th>Date</th>
                                             <th>Action</th>
                                         </tr>
                                      </thead>
+                                     <tfoot>
+                                        <tr>
+                                            <td colspan="3"></td>
+                                            <td class="text-right"><strong>Total:</strong></td>
+                                            <td class="text-right" id="grandTotal"><strong>Rs 0.00</strong></td>
+                                            <td colspan="3"></td>
+                                        </tr>
+                                     </tfoot>
                                 </table>
                         </div>
                     </div>
@@ -218,6 +228,8 @@ function action(data) {
 }
 
 $(document).ready(function() {
+    var num = $.fn.dataTable.render.number(',', '.', 2, '');
+
     stockTable = $('#dataTable').DataTable({
         "destroy": true,
         "processing": true,
@@ -233,12 +245,22 @@ $(document).ready(function() {
             { "data": "idtbl_stock" },
             { "data": "product_name" },
             { "data": "qty" },
+            { "data": "unitprice", "className": "text-right", render: num },
+            { "data": "total", "className": "text-right", render: num },
             { "data": "location" },
             { "data": "date" },
             { "data": "action", "orderable": false, "searchable": false }
         ],
         drawCallback: function (settings) {
             $('[data-toggle="tooltip"]').tooltip();
+        }
+    });
+
+    // Full column total (all rows, not just this page) comes back with every list response
+    stockTable.on('xhr.dt', function (e, settings, json) {
+        if (json && typeof json.grandtotal !== 'undefined') {
+            var t = parseFloat(json.grandtotal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            $('#grandTotal').html('<strong>Rs ' + t + '</strong>');
         }
     });
 

@@ -5,6 +5,8 @@
  * Adds an Action column (Edit / Delete buttons), disabled per the
  * logged-in user's privilege on the "manage stock" menu item (id 34),
  * same as the disabled-button pattern used on area.php.
+ *
+ * Also returns Unit Price (tbl_product.unitprice) and Total (qty x unitprice).
  */
 
 session_start();
@@ -83,6 +85,10 @@ $primaryKey = 'idtbl_stock';
 $columns = array(
     array( 'db' => '`u`.`idtbl_stock`', 'dt' => 'idtbl_stock', 'field' => 'idtbl_stock' ),
     array( 'db' => '`u`.`qty`', 'dt' => 'qty', 'field' => 'qty' ),
+    // Current unit price from tbl_product
+    array( 'db' => '`ud`.`unitprice`', 'dt' => 'unitprice', 'field' => 'unitprice' ),
+    // Total = qty x unitprice (computed, so it needs an explicit alias)
+    array( 'db' => '(`u`.`qty` * `ud`.`unitprice`)', 'dt' => 'total', 'field' => 'total', 'as' => 'total' ),
     array( 'db' => '`ud`.`product_name`', 'dt' => 'product_name', 'field' => 'product_name' ),
     array( 'db' => '`uc`.`location`', 'dt' => 'location', 'field' => 'location' ),
     array(
@@ -135,6 +141,17 @@ LEFT JOIN `tbl_location` AS `uc` ON (`uc`.`idtbl_location` = `u`.`tbl_location_i
 
 // status = 1 or 2 => visible/active. status = 3 => soft-deleted, excluded here.
 $extraWhere = "`u`.`status` IN (1, 2)";
-echo json_encode(
-	SSP::simple( $_POST, $sql_details, $table, $primaryKey, $columns, $joinQuery, $extraWhere )
-);
+$result = SSP::simple( $_POST, $sql_details, $table, $primaryKey, $columns, $joinQuery, $extraWhere );
+
+// Grand total of the whole Total column (qty x unitprice) across ALL active stock
+// rows for this location, not just the current page. Same filters as the list above.
+$sqlgrand = "SELECT COALESCE(SUM(`u`.`qty` * `ud`.`unitprice`), 0) AS `grandtotal`
+             FROM `tbl_stock` AS `u`
+             LEFT JOIN `tbl_product` AS `ud` ON (`ud`.`idtbl_product` = `u`.`tbl_product_idtbl_product`)
+             WHERE `u`.`tbl_location_idtbl_location` = '$locationID'
+               AND `u`.`qty` > 0
+               AND `u`.`status` IN (1, 2)";
+$resultgrand = $conn->query($sqlgrand);
+$result['grandtotal'] = $resultgrand ? floatval($resultgrand->fetch_assoc()['grandtotal']) : 0;
+
+echo json_encode($result);

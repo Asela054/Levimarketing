@@ -2,6 +2,10 @@
 session_start();
 if(!isset($_SESSION['userid'])){header ("Location:index.php");}
 require_once('../connection/db.php');
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$conn->query("SET SESSION sql_mode = REPLACE(REPLACE(@@sql_mode,'NO_ZERO_DATE',''),'NO_ZERO_IN_DATE','')");
+
 $userID=$_SESSION['userid'];
 $locationID=$_SESSION['location_id'];
 
@@ -14,9 +18,9 @@ $distotal=$_POST['distotal'];
 $nettotal=$_POST['nettotal'];
 $paytotal=$_POST['paytotal'];
 $billtype=$_POST['billtype'];
-$cusname=$_POST['cusname'];
-$cusnic=$_POST['cusnic'];
-$cusmobile=$_POST['cusmobile'];
+$cusname=$conn->real_escape_string($_POST['cusname']);
+$cusnic=$conn->real_escape_string($_POST['cusnic']);
+$cusmobile=$conn->real_escape_string($_POST['cusmobile']);
 $cusID=$_POST['cusID'];
 $saletype = isset($_POST['saletype']) && $_POST['saletype'] !== '' ? $_POST['saletype'] : null;
 if($saletype === null){
@@ -45,44 +49,46 @@ else if($balance>0 && $billtype==1 && $paytotal < $nettotal){$halfstatus=1;$full
 else{$halfstatus=0;$fullstatus=1;$paycomplete=1;}
 
 $today=date('Y-m-d');
-$updatedatetime=date('Y-m-d h:i:s');
+$updatedatetime=date('Y-m-d H:i:s');
 
-if($cusID==0){
-    $insertcustomer="INSERT INTO `tbl_customer`(`type`, `name`, `nic`, `phone`, `email`, `address`, `vat_num`, `s_vat`, `creditlimit`, `credittype`, `creditperiod`, `emergencydate`, `status`, `updatedatetime`, `tbl_user_idtbl_user`, `tbl_area_idtbl_area`) VALUES ('0','$cusname','$cusnic','$cusmobile','','','','','','','','','1','$updatedatetime','$userID','1')";
-    $conn->query($insertcustomer);
-    $cusID=$conn->insert_id;
-}
+$conn->begin_transaction();
 
-if($logtype==1){
-    $sqlcheckmenuelinv="SELECT `manuelinvno` FROM `tbl_invoice` WHERE `status`=1 AND `manuelinvno`!='' ORDER BY `idtbl_invoice` DESC LIMIT 1";
-    $resultcheckmenuelinv=$conn->query($sqlcheckmenuelinv);
-    $rowcheckmenuelinv=$resultcheckmenuelinv->fetch_assoc();
+try {
 
-    if($resultcheckmenuelinv-> num_rows > 0){
-        $menualinvoice=$rowcheckmenuelinv['manuelinvno']+1;
+    if($cusID==0){
+        $insertcustomer="INSERT INTO `tbl_customer`(`type`, `name`, `nic`, `phone`, `email`, `address`, `vat_num`, `s_vat`, `creditlimit`, `credittype`, `creditperiod`, `emergencydate`, `status`, `updatedatetime`, `tbl_user_idtbl_user`, `tbl_area_idtbl_area`) VALUES ('0','$cusname','$cusnic','$cusmobile','','','','','','','','','1','$updatedatetime','$userID','1')";
+        $conn->query($insertcustomer);
+        $cusID=$conn->insert_id;
+    }
+
+    if($logtype==1){
+        $sqlcheckmenuelinv="SELECT `manuelinvno` FROM `tbl_invoice` WHERE `status`=1 AND `manuelinvno`!='' ORDER BY `idtbl_invoice` DESC LIMIT 1";
+        $resultcheckmenuelinv=$conn->query($sqlcheckmenuelinv);
+        $rowcheckmenuelinv=$resultcheckmenuelinv->fetch_assoc();
+
+        if($resultcheckmenuelinv->num_rows > 0){
+            $menualinvoice=$rowcheckmenuelinv['manuelinvno']+1;
+        }
+        else{
+            $menualinvoice=1;
+        }
     }
     else{
-        $menualinvoice=1;
+        $menualinvoice=NULL;
     }
-}
-else{
-    $menualinvoice=NULL;
-}
 
-$insertinvoice="INSERT INTO `tbl_invoice`(`manuelinvno`, `date`, `total`, `discounttotal`, `nettotal`, `saletype`, `paymentmethod`, `paymentcomplete`, `payment_created`, `chequesend`, `companydiffsend`, `ref_id`, `trackingnumber`, `deliverystatus`, `addtoaccountstatus`, `pricechangestatus`, `changeapproveuser`, `changedatetime`, `status`, `invoice_cancel_reason`, `qtycancelstatus`, `qtyreason`, `qty_checked_user`, `qty_updatedatetime`, `updatedatetime`, `tbl_user_idtbl_user`, `customerid`, `tbl_location_idtbl_location`) VALUES ('$menualinvoice','$today','$total','$distotal','$nettotal','$saletype','$billtype','$paycomplete','0','0','0','0','0','0','0','$priceeditstatus','$billapproveuser','$updatedatetime','1','-','0','-','0','$updatedatetime','$updatedatetime','$userID','$cusID','$locationID')";
-if($conn->query($insertinvoice)==true){
+    $insertinvoice="INSERT INTO `tbl_invoice`(`invtype`, `manuelinvno`, `taxinvoice_no`, `date`, `total`, `discounttotal`, `nettotal`, `vattype`, `vatpercent`, `vatamount`, `nettotal_with_vat`, `saletype`, `paymentmethod`, `paymentcomplete`, `payment_created`, `chequesend`, `companydiffsend`, `ref_id`, `trackingnumber`, `deliverystatus`, `addtoaccountstatus`, `pricechangestatus`, `changeapproveuser`, `changedatetime`, `status`, `invoice_cancel_reason`, `qtycancelstatus`, `qtyreason`, `qty_checked_user`, `qty_updatedatetime`, `updatedatetime`, `tbl_user_idtbl_user`, `customerid`, `tbl_location_idtbl_location`) VALUES ('0','$menualinvoice','','$today','$total','$distotal','$nettotal','0','0','0','0','$saletype','$billtype','$paycomplete','0','0','0','0','0','0','0','$priceeditstatus','$billapproveuser','$updatedatetime','1','-','0','-','0','$updatedatetime','$updatedatetime','$userID','$cusID','$locationID')";
+    $conn->query($insertinvoice);
     $invoiceID=$conn->insert_id;
 
     foreach($tableData as $rowtabledata){
-        $productID=$rowtabledata['col_6'];
-        $qty=$rowtabledata['col_2'];
-        $actuallineamount=$rowtabledata['col_8'];
-        $total=$rowtabledata['col_10'];
-        $deiscountpresntage=$rowtabledata['col_11'];
-        $discountamount=$rowtabledata['col_12'];
-        $totalwithdiscount=$rowtabledata['col_13'];
-        $editstatus=$rowtabledata['col_14'];
-        $editedprice = isset($rowtabledata['col_15']) ? $rowtabledata['col_15'] : 0;
+        $productID=intval($rowtabledata['col_6']);
+        $qty=floatval($rowtabledata['col_2']);
+        $actuallineamount=floatval(str_replace(',', '', $rowtabledata['col_8']));
+        $deiscountpresntage=floatval($rowtabledata['col_11']);
+        $discountamount=floatval(str_replace(',', '', $rowtabledata['col_12']));
+        $editstatus=intval($rowtabledata['col_14']);
+        $editedprice = isset($rowtabledata['col_15']) ? floatval(str_replace(',', '', $rowtabledata['col_15'])) : 0;
 
         $insertinvoicedetail="INSERT INTO `tbl_invoice_detail`(`qty`, `freeqty`, `freeproductid`, `unitprice`, `editedprice`, `saleprice`, `discountpresentage`, `discountamount`, `editstatus`, `status`, `updatedatetime`, `tbl_user_idtbl_user`, `tbl_product_idtbl_product`, `tbl_invoice_idtbl_invoice`) VALUES ('$qty','0','$productID','$actuallineamount','$editedprice','$actuallineamount','$deiscountpresntage','$discountamount','$editstatus','1','$updatedatetime','$userID','$productID','$invoiceID')";
         $conn->query($insertinvoicedetail);
@@ -93,27 +99,30 @@ if($conn->query($insertinvoice)==true){
 
     if($billtype==1){
         $insertpayment="INSERT INTO `tbl_invoice_payment`(`date`, `payment`, `balance`, `status`, `updatedatetime`, `tbl_user_idtbl_user`) VALUES ('$today','$paytotal','$balance','1','$updatedatetime','$userID')";
-        if($conn->query($insertpayment)==true){
-            $invoicepayID=$conn->insert_id;
+        $conn->query($insertpayment);
+        $invoicepayID=$conn->insert_id;
 
-            if(!empty($tableDataPay)){
-                foreach($tableDataPay as $rowtableDataPay){
-                    $paymethod=$rowtableDataPay['col_1'];
-                    $bank=$rowtableDataPay['col_3'];
-                    $chequeno=$rowtableDataPay['col_4'];
-                    $chequedate=$rowtableDataPay['col_5'];
-                    $cardlast4=isset($rowtableDataPay['col_6']) ? $rowtableDataPay['col_6'] : '';
-                    $totalamount=$rowtableDataPay['col_7'];                                         
-
-                    $insertpaymentdetail="INSERT INTO `tbl_invoice_payment_detail`(`method`, `amount`, `bank`, `receiptno`, `chequeno`, `chequedate`, `cardlast4`, `addaccountstatus`, `status`, `updatedatetime`, `tbl_user_idtbl_user`, `tbl_invoice_payment_idtbl_invoice_payment`) VALUES ('$paymethod','$totalamount','$bank','','$chequeno','$chequedate','$cardlast4','1','1','$updatedatetime','$userID','$invoicepayID')";
-                    $conn->query($insertpaymentdetail);
-                }
-            }
-
-            $inserthastable="INSERT INTO `tbl_invoice_payment_has_tbl_invoice`(`tbl_invoice_payment_idtbl_invoice_payment`, `tbl_invoice_idtbl_invoice`, `total`, `discount`, `payamount`, `fullstatus`, `halfstatus`) VALUES ('$invoicepayID','$invoiceID','$nettotal','0','$paytotal','$fullstatus','$halfstatus')";
-            $conn->query($inserthastable);
+        if(empty($tableDataPay)){
+            throw new Exception('No payment rows were received.');
         }
+
+        foreach($tableDataPay as $rowtableDataPay){
+            $paymethod   = intval($rowtableDataPay['col_1']);
+            $bank        = $conn->real_escape_string($rowtableDataPay['col_3'] ?? '');
+            $chequeno    = $conn->real_escape_string($rowtableDataPay['col_4'] ?? '');
+            $chequedate = !empty(trim($rowtableDataPay['col_5'] ?? '')) ? $conn->real_escape_string($rowtableDataPay['col_5']) : '0000-00-00';
+            $cardlast4   = $conn->real_escape_string($rowtableDataPay['col_6'] ?? '');
+            $totalamount = floatval(str_replace(',', '', $rowtableDataPay['col_7']));
+
+            $insertpaymentdetail="INSERT INTO `tbl_invoice_payment_detail`(`method`, `amount`, `bank`, `receiptno`, `chequeno`, `chequedate`, `cardlast4`, `addaccountstatus`, `status`, `updatedatetime`, `tbl_user_idtbl_user`, `tbl_invoice_payment_idtbl_invoice_payment`) VALUES ('$paymethod','$totalamount','$bank','','$chequeno','$chequedate','$cardlast4','1','1','$updatedatetime','$userID','$invoicepayID')";
+            $conn->query($insertpaymentdetail);
+        }
+
+        $inserthastable="INSERT INTO `tbl_invoice_payment_has_tbl_invoice`(`tbl_invoice_payment_idtbl_invoice_payment`, `tbl_invoice_idtbl_invoice`, `total`, `discount`, `payamount`, `fullstatus`, `halfstatus`) VALUES ('$invoicepayID','$invoiceID','$nettotal','0','$paytotal','$fullstatus','$halfstatus')";
+        $conn->query($inserthastable);
     }
+
+    $conn->commit();
 
     $actionObj=new stdClass();
     $actionObj->icon='fas fa-check-circle';
@@ -132,8 +141,9 @@ if($conn->query($insertinvoice)==true){
 
     echo json_encode($obj);
 
-}else{
-    echo "Database Error: " . $conn->error;
+} catch (Exception $e) {
+    $conn->rollback();
+    echo "Database Error: " . $e->getMessage();
     die();
 }
 ?>
