@@ -585,7 +585,7 @@ function checkprivilege($arraymenu, $menuID, $type){
                         <?php }if(menucheck($menuprivilegearray, 46)==1){ ?>
                         <a class="nav-link<?php if($lastElement=="rptmonthlysale.php"){echo ' active';} ?>" href="rptmonthlysale.php"><span class="nav-link-text">Monthly Sales Report</span></a>
                         <?php }if(menucheck($menuprivilegearray, 47)==1){ ?>
-                        <a class="nav-link<?php if($lastElement=="rptdailysalespayment.php"){echo ' active';} ?>" href="rptdailysalespayment.php"><span class="nav-link-text">Daily Sales & Payment Reconciliation</span></a>
+                        <a class="nav-link<?php if($lastElement=="rptdailysalespayment.php"){echo ' active';} ?>" href="rptdailysalespayment.php"><span class="nav-link-text">Bin Card</span></a>
                         <?php }if(menucheck($menuprivilegearray, 17)==1){ ?>
                         <a class="nav-link<?php if($lastElement=="rptinvoiceview.php"){echo ' active';} ?>" href="rptinvoiceview.php"><span class="nav-link-text">Invoice Report</span></a>
                         <?php }if(menucheck($menuprivilegearray, 18)==1){ ?>
