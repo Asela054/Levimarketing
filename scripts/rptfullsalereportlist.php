@@ -5,6 +5,10 @@ session_start();
  * One row per invoice line (tbl_invoice_detail), filtered by MONTH only.
  *
  * POST: search_month = "YYYY-MM" (from <input type="month">)
+ *
+ * Prices come from tbl_product (NOT from tbl_invoice_detail):
+ *   tbl_invoice.saletype = 1 (retail)    -> tbl_product.saleprice
+ *   tbl_invoice.saletype = 2 (wholesale) -> tbl_product.wholesaleprice
  */
 
 $type       = $_SESSION['privatetype'];
@@ -14,8 +18,12 @@ $table      = 'tbl_invoice_detail';
 $primaryKey = 'idtbl_invoice_detail';
 
 $invoiceNoExpr = "COALESCE(NULLIF(`u`.`taxinvoice_no`, ''), `u`.`manuelinvno`, `u`.`idtbl_invoice`)";
-// ASSUMPTION: saleprice = per-unit selling price. Adjust if it already holds the line total.
-$lineTotalExpr = "(`d`.`qty` * `d`.`saleprice`)";
+
+// Selling price from the product table, chosen by the invoice sale type
+$salePriceExpr = "(CASE `u`.`saletype` WHEN 2 THEN `p`.`wholesaleprice` ELSE `p`.`saleprice` END)";
+
+// Line total = qty x selling price (free qty is not charged)
+$lineTotalExpr = "(`d`.`qty` * $salePriceExpr)";
 
 $columns = array(
 	array( 'db' => $invoiceNoExpr,            'dt' => 'id',        'field' => 'id', 'as' => 'id' ),
@@ -25,8 +33,8 @@ $columns = array(
 	array( 'db' => '`p`.`product_name`',      'dt' => 'product',   'field' => 'product_name' ),
 	array( 'db' => '`d`.`qty`',               'dt' => 'qty',       'field' => 'qty' ),
 	array( 'db' => '`d`.`freeqty`',           'dt' => 'freeqty',   'field' => 'freeqty' ),
-	array( 'db' => '`d`.`unitprice`',         'dt' => 'unitprice', 'field' => 'unitprice' ),
-	array( 'db' => '`d`.`saleprice`',         'dt' => 'saleprice', 'field' => 'saleprice' ),
+	array( 'db' => '`p`.`unitprice`',         'dt' => 'unitprice', 'field' => 'unitprice' ),
+	array( 'db' => $salePriceExpr,            'dt' => 'saleprice', 'field' => 'saleprice', 'as' => 'saleprice' ),
 	array( 'db' => '`d`.`discountamount`',    'dt' => 'discount',  'field' => 'discountamount' ),
 	array( 'db' => $lineTotalExpr,            'dt' => 'linetotal', 'field' => 'linetotal', 'as' => 'linetotal' )
 );

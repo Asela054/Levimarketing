@@ -26,7 +26,7 @@ $companyTel = implode(' / ', array_filter([
 $companyEmail = $company['email'] ?? '';
 $companyTin   = '103464978'; // Supplier's TIN
 
-$sqlinvoiceinfo="SELECT `tbl_invoice`.`idtbl_invoice`,`tbl_invoice`.`manuelinvno`, `tbl_invoice`.`date`, `tbl_invoice`.`total`, `tbl_invoice`.`discounttotal`, `tbl_invoice`.`nettotal`, `tbl_invoice`.`paymentcomplete`, `tbl_invoice`.`saletype`, `tbl_invoice`.`customerid`, `tbl_customer`.`name`, `tbl_customer`.`address` FROM `tbl_invoice` LEFT JOIN `tbl_customer` ON `tbl_customer`.`idtbl_customer`=`tbl_invoice`.`customerid` WHERE `tbl_invoice`.`status`=1 AND `tbl_invoice`.`idtbl_invoice`='$recordID'";
+$sqlinvoiceinfo="SELECT `tbl_invoice`.`idtbl_invoice`,`tbl_invoice`.`manuelinvno`, `tbl_invoice`.`date`, `tbl_invoice`.`total`, `tbl_invoice`.`discounttotal`, `tbl_invoice`.`nettotal`, `tbl_invoice`.`paymentcomplete`, `tbl_invoice`.`saletype`, `tbl_invoice`.`customerid`, `tbl_customer`.`name`, `tbl_customer`.`address`, `tbl_customer`.`phone` FROM `tbl_invoice` LEFT JOIN `tbl_customer` ON `tbl_customer`.`idtbl_customer`=`tbl_invoice`.`customerid` WHERE `tbl_invoice`.`status`=1 AND `tbl_invoice`.`idtbl_invoice`='$recordID'";
 $resultinvoiceinfo =$conn-> query($sqlinvoiceinfo);
 $rowinvoiceinfo = $resultinvoiceinfo-> fetch_assoc();
 
@@ -318,6 +318,8 @@ $isRetail = ($rowinvoiceinfo['saletype'] == 1);
                     <p style="margin:0px;font-size:16px;font-weight: bold;">SALES INVOICE</p>
                     <p style="margin:0px;font-size:13px;font-weight: bold;">To: <?php echo htmlspecialchars($rowinvoiceinfo['name']); ?></p>
                     <p style="margin:0px;font-size:13px;padding-left: 24px;"><?php echo nl2br(htmlspecialchars($rowinvoiceinfo['address'])); ?></p>
+                    <p style="margin:0px;font-size:13px;padding-left: 24px;"><?php echo nl2br(htmlspecialchars($rowinvoiceinfo['phone'])); ?></p>
+
                 </td>
                 <td width="45%" style="vertical-align: top;padding:0px;">
                     <img src="../images/levilogobw.png" alt="Levi Marketing Logo" style="width:250px;height:auto;display:block;margin:0 0 6px 0;">
