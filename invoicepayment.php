@@ -103,11 +103,11 @@ include "include/topnavbar.php";
                                 <label class="custom-control-label" for="paymentMethod1">Cash</label>
                             </div>
                             <div class="custom-control custom-radio custom-control-inline">
-                                <input type="radio" id="paymentMethod2" name="paymentMethod" class="custom-control-input" value="2" data-toggle="collapse" href="#collapseTwo">
+                                <input type="radio" id="paymentMethod2" name="paymentMethod" class="custom-control-input" value="3" data-toggle="collapse" href="#collapseTwo">
                                 <label class="custom-control-label" for="paymentMethod2">Bank / Cheque</label>
                             </div>
                             <div class="custom-control custom-radio custom-control-inline">
-                                <input type="radio" id="paymentMethod3" name="paymentMethod" class="custom-control-input" value="3" data-toggle="collapse" href="#collapseThree">
+                                <input type="radio" id="paymentMethod3" name="paymentMethod" class="custom-control-input" value="2" data-toggle="collapse" href="#collapseThree">
                                 <label class="custom-control-label" for="paymentMethod3">Card</label>
                             </div>
                             <div class="custom-control custom-radio custom-control-inline">
@@ -383,10 +383,10 @@ include "include/topnavbar.php";
                 $('#paymentCash').prop("readonly", false);
             }
             else if (this.value == '2') {
-                $('#paymentCheque, #paymentChequeNum, #paymentReceiptNum, #paymentchequeDate, #paymentBank').prop("readonly", false);
+                $('#paymentCardAmount, #paymentCardLast4').prop("readonly", false);
             }
             else if (this.value == '3') {
-                $('#paymentCardAmount, #paymentCardLast4').prop("readonly", false);
+                $('#paymentCheque, #paymentChequeNum, #paymentReceiptNum, #paymentchequeDate, #paymentBank').prop("readonly", false);
             }
             else if (this.value == '4') {
                 $('#paymentOnlineAmount, #paymentOnlineRef').prop("readonly", false);
@@ -426,8 +426,28 @@ include "include/topnavbar.php";
 
                     $('#btnIssueInv').prop('disabled', false);
                 }
-                else if(paymenttype==2){
-                    $('#tblPaymentTypeModal > tbody:last').append('<tr class="pointer"><td>Bank / Cheque</td><td class="">-</td><td class="text-right">' + parseFloat(paymentCheque).toFixed(2) + '</td><td class="">'+paymentChequeNum+'</td><td>'+paymentReceiptNum+'</td><td>'+paymentchequeDate+'</td><td>'+paymentBank+'</td><td class="d-none"></td><td class="d-none">2</td></tr>');
+                else if(paymenttype==2){                                                     
+                    $('#tblPaymentTypeModal > tbody:last').append('<tr class="pointer"><td>Card</td><td class="">-</td><td class="text-right">' + parseFloat(paymentCardAmount).toFixed(2) + '</td><td class="">'+paymentCardLast4+'</td><td>-</td><td>-</td><td>-</td><td class="d-none"></td><td class="d-none">2</td></tr>');
+
+                    var paidAmount = parseFloat($('#hidePayAmount').val());
+                    var PayAmount = parseFloat(paymentCardAmount);
+                    var paymentPayAmount = parseFloat($('#hideAllBalAmount').val());
+
+                    paidAmount = (paidAmount + PayAmount);
+                    var balance = (paymentPayAmount - paidAmount);
+                    $('#hideBalAmount').val(balance);
+                    $('#balanceAmount').html((balance).toFixed(2));
+                    $('#payAmount').html((paidAmount).toFixed(2));
+                    $('#hidePayAmount').val(paidAmount);
+
+                    $('#paymentCardAmount').val('').prop('readonly', true);
+                    $('#paymentCardLast4').val('').prop('readonly', true);
+                    $('#paymentMethod3').prop('checked', false);
+
+                    $('#btnIssueInv').prop('disabled', false);
+                }
+                else if(paymenttype==3){
+                    $('#tblPaymentTypeModal > tbody:last').append('<tr class="pointer"><td>Bank / Cheque</td><td class="">-</td><td class="text-right">' + parseFloat(paymentCheque).toFixed(2) + '</td><td class="">'+paymentChequeNum+'</td><td>'+paymentReceiptNum+'</td><td>'+paymentchequeDate+'</td><td>'+paymentBank+'</td><td class="d-none"></td><td class="d-none">3</td></tr>');
 
                     var paidAmount = parseFloat($('#hidePayAmount').val());
                     var PayAmount = parseFloat(paymentCheque);
@@ -446,26 +466,6 @@ include "include/topnavbar.php";
                     $('#paymentchequeDate').val('').prop('readonly', true);
                     $('#paymentBank').val('').prop('readonly', true);
                     $('#paymentMethod2').prop('checked', false);
-
-                    $('#btnIssueInv').prop('disabled', false);
-                }
-                else if(paymenttype==3){                                                     
-                    $('#tblPaymentTypeModal > tbody:last').append('<tr class="pointer"><td>Card</td><td class="">-</td><td class="text-right">' + parseFloat(paymentCardAmount).toFixed(2) + '</td><td class="">'+paymentCardLast4+'</td><td>-</td><td>-</td><td>-</td><td class="d-none"></td><td class="d-none">3</td></tr>');
-
-                    var paidAmount = parseFloat($('#hidePayAmount').val());
-                    var PayAmount = parseFloat(paymentCardAmount);
-                    var paymentPayAmount = parseFloat($('#hideAllBalAmount').val());
-
-                    paidAmount = (paidAmount + PayAmount);
-                    var balance = (paymentPayAmount - paidAmount);
-                    $('#hideBalAmount').val(balance);
-                    $('#balanceAmount').html((balance).toFixed(2));
-                    $('#payAmount').html((paidAmount).toFixed(2));
-                    $('#hidePayAmount').val(paidAmount);
-
-                    $('#paymentCardAmount').val('').prop('readonly', true);
-                    $('#paymentCardLast4').val('').prop('readonly', true);
-                    $('#paymentMethod3').prop('checked', false);
 
                     $('#btnIssueInv').prop('disabled', false);
                 }

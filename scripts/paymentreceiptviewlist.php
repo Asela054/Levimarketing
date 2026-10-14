@@ -40,7 +40,12 @@ $columns = array(
 	array( 'db' => '`u`.`date`', 'dt' => 'date', 'field' => 'date' ),
 	array( 'db' => '`u`.`payment`', 'dt' => 'payment', 'field' => 'payment' ),
 	array( 'db' => '`u`.`balance`', 'dt' => 'balance', 'field' => 'balance' ),
-	array( 'db' => '`u`.`status`',   'dt' => 'status', 'field' => 'status' )
+	array( 'db' => '`u`.`status`',   'dt' => 'status', 'field' => 'status' ),
+	// --- cheque return columns (from tbl_invoice_payment_detail, alias pd) ---
+	// 'field' must be the real column name returned by MySQL; 'dt' is the key the view reads.
+	array( 'db' => '`pd`.`idtbl_invoice_payment_detail`', 'dt' => 'chequeid',           'field' => 'idtbl_invoice_payment_detail' ),
+	array( 'db' => '`pd`.`chequedate`',                   'dt' => 'chequedate',         'field' => 'chequedate' ),
+	array( 'db' => '`pd`.`chequereturnstatus`',           'dt' => 'chequereturnstatus', 'field' => 'chequereturnstatus' )
 );
 
 // SQL server connection information
@@ -123,6 +128,12 @@ $joinQuery = "
     INNER JOIN `tbl_invoice` AS `i`
         ON `i`.`idtbl_invoice`
            = `uphi`.`tbl_invoice_idtbl_invoice`
+
+    LEFT JOIN `tbl_invoice_payment_detail` AS `pd`
+        ON `pd`.`tbl_invoice_payment_idtbl_invoice_payment`
+           = `u`.`idtbl_invoice_payment`
+       AND `pd`.`method` = 3
+       AND `pd`.`status` = 1
 ";
 
 $extraWhere = "
