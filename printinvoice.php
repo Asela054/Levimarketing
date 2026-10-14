@@ -309,7 +309,7 @@ $vatTypeLabel       = $isVatInclusive ? 'Inclusive' : 'Exclusive';
         border-collapse: collapse;
     }
     .footertable td {
-        width: 33.33%;
+        width: 25%;
         padding-top: 45px;
         vertical-align: bottom;
     }
@@ -335,6 +335,7 @@ $vatTypeLabel       = $isVatInclusive ? 'Inclusive' : 'Exclusive';
                 <td><div class="sig-line"></div>Prepared By</td>
                 <td><div class="sig-line"></div>Checked By</td>
                 <td><div class="sig-line"></div>For <?php echo htmlspecialchars($companyName); ?></td>
+                <td><div class="sig-line"></div>Customer Signature</td>
             </tr>
         </table>
     </footer>
