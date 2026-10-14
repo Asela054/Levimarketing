@@ -287,7 +287,12 @@ else if($lastElement=='rptdailysalespayment.php'){
     $statuscheck=checkprivilege($menuprivilegearray, 47, 3);
     $deletecheck=checkprivilege($menuprivilegearray, 47, 4);
 }
-
+else if($lastElement=='grnreturn.php'){
+    $addcheck=checkprivilege($menuprivilegearray, 48, 1);
+    $editcheck=checkprivilege($menuprivilegearray, 48, 2);
+    $statuscheck=checkprivilege($menuprivilegearray, 48, 3);
+    $deletecheck=checkprivilege($menuprivilegearray, 48, 4);
+}
 
 
 function checkprivilege($arraymenu, $menuID, $type){
@@ -460,7 +465,7 @@ function checkprivilege($arraymenu, $menuID, $type){
             <?php } ?>
 
             <!-- Procurement & Stock -->
-            <?php if(menucheck($menuprivilegearray, 9)==1 | menucheck($menuprivilegearray, 10)==1 | menucheck($menuprivilegearray, 33)==1 | menucheck($menuprivilegearray, 34)==1 | menucheck($menuprivilegearray, 23)==1 | menucheck($menuprivilegearray, 24)==1 | menucheck($menuprivilegearray, 30)==1){ ?>
+            <?php if(menucheck($menuprivilegearray, 9)==1 | menucheck($menuprivilegearray, 10)==1 | menucheck($menuprivilegearray, 48)==1 | menucheck($menuprivilegearray, 33)==1 | menucheck($menuprivilegearray, 34)==1 | menucheck($menuprivilegearray, 23)==1 | menucheck($menuprivilegearray, 24)==1 | menucheck($menuprivilegearray, 30)==1){ ?>
             <div class="sidenav-menu-heading">Procurement &amp; Stock</div>
 
             <?php if(menucheck($menuprivilegearray, 9)==1){ ?>
@@ -470,12 +475,24 @@ function checkprivilege($arraymenu, $menuID, $type){
                     <span class="nav-link-text">Purchase Order</span>
                 </a>
             </div>
-            <?php } if(menucheck($menuprivilegearray, 10)==1){ ?>
+            <?php } if(menucheck($menuprivilegearray, 10)==1 | menucheck($menuprivilegearray, 48)==1){ ?>
             <div class="sidenav-item">
-                <a class="nav-link<?php if($lastElement=="grn.php"){echo ' active';} ?>" href="grn.php" data-title="GRN Info">
+                <a class="nav-link collapsed" href="javascript:void(0);" data-toggle="collapse"
+                    data-target="#collapsegrn" aria-expanded="false" aria-controls="collapsegrn">
                     <div class="nav-link-icon"><i class="fas fa-warehouse"></i></div>
                     <span class="nav-link-text">GRN Info</span>
+                    <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                 </a>
+                <div class="collapse <?php if($lastElement=="grn.php" | $lastElement=="grnreturn.php"){echo 'show';} ?>"
+                    id="collapsegrn" data-parent="#accordionSidenav" data-flyout-title="GRN Info">
+                    <nav class="sidenav-menu-nested nav accordion" id="accordionSidenavPages">
+                        <?php if(menucheck($menuprivilegearray, 10)==1){ ?>
+                        <a class="nav-link<?php if($lastElement=="grn.php"){echo ' active';} ?>" href="grn.php"><span class="nav-link-text">GRN</span></a>
+                        <?php }if(menucheck($menuprivilegearray, 48)==1){ ?>
+                        <a class="nav-link<?php if($lastElement=="grnreturn.php"){echo ' active';} ?>" href="grnreturn.php"><span class="nav-link-text">GRN Return</span></a>
+                        <?php } ?>
+                    </nav>
+                </div>
             </div>
             <?php } if(menucheck($menuprivilegearray, 33)==1){ ?>
             <div class="sidenav-item">

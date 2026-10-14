@@ -99,7 +99,7 @@ $joinQuery = "FROM `tbl_invoice_payment_detail` AS `pd`
 // row and the invoice so cancelled/voided records don't leak in. Location
 // filter matches the session location (via the invoice, since that's where
 // tbl_location_idtbl_location actually lives).
-$extraWhere = "`pd`.`method` = 2 AND `pd`.`status` = 1 AND `i`.`status` = 1 AND `i`.`tbl_location_idtbl_location` = $locationID";
+$extraWhere = "`pd`.`method` = 3 AND `pd`.`status` = 1 AND `i`.`status` = 1 AND `i`.`tbl_location_idtbl_location` = $locationID";
 
 // Customer filter - only remaining filter, per request.
 if (!empty($_POST['search_customer'])) {
