@@ -184,10 +184,10 @@ $isRetail = ($rowinvoiceinfo['saletype'] == 1);
                 <td style="text-align: right; font-size:14px;border-bottom:1px dotted black;"><?php echo number_format($credit, 2) ?></td>
             </tr>
             <?php if($custoutstanding > 0): ?>
-            <tr>
+            <!-- <tr>
                 <td style="text-align: left; font-size:14px;border-bottom:1px dotted black;font-weight:bold;">Total Outstanding</td>
                 <td style="text-align: right; font-size:14px;border-bottom:1px dotted black;font-weight:bold;"><?php echo number_format($custoutstanding, 2) ?></td>
-            </tr>
+            </tr> -->
             <?php endif; ?>
             <tr>
                 <td style="text-align: left; font-size:14px;border-bottom:1px dotted black;">Total Item Count </td>
