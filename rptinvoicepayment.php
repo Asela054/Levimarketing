@@ -20,7 +20,7 @@ include "include/topnavbar.php";
                         <div class="row">
                             <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12">
                                 <h1 class="page-header-title">
-                                    <span class="bi bi-receipt">&nbsp; Invoice Payment</span>
+                                    <span> <i class="fas fa-receipt"></i>&nbsp; Invoice Payment</span>
                                 </h1>
                             </div>
                         </div>
