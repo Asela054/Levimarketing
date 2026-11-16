@@ -12,11 +12,15 @@ $columns = array(
     array( 'db' => '`u`.`manuelinvno`', 'dt' => 'id', 'field' => 'manuelinvno' ),
     array( 'db' => '`u`.`idtbl_invoice`', 'dt' => 'idtbl_invoice', 'field' => 'idtbl_invoice' ),
     array( 'db' => '`u`.`taxinvoice_no`', 'dt' => 'taxinvoice_no', 'field' => 'taxinvoice_no' ),
+    // NEW: new prefixed tax invoice number (e.g. 26NOV_LV1_08220)
+    array( 'db' => '`u`.`taxinvnum_new`', 'dt' => 'taxinvnum_new', 'field' => 'taxinvnum_new' ),
+    // NEW: new normal invoice number (starts at 8300)
+    array( 'db' => '`u`.`nontaxinvnum_new`', 'dt' => 'nontaxinvnum_new', 'field' => 'nontaxinvnum_new' ),
     array( 'db' => '`u`.`date`', 'dt' => 'date', 'field' => 'date' ),
     array( 'db' => '`u`.`total`', 'dt' => 'total', 'field' => 'total' ),
     array( 'db' => '`u`.`discounttotal`', 'dt' => 'discounttotal', 'field' => 'discounttotal' ),
     array( 'db' => '`u`.`nettotal`', 'dt' => 'nettotal', 'field' => 'nettotal' ),
-    // NEW: needed so tax invoices can display the net total including VAT
+    // needed so tax invoices can display the net total including VAT
     array( 'db' => '`u`.`nettotal_with_vat`', 'dt' => 'nettotal_with_vat', 'field' => 'nettotal_with_vat' ),
     array( 'db' => '`u`.`paymentcomplete`', 'dt' => 'paymentcomplete', 'field' => 'paymentcomplete' ),
     array( 'db' => '`u`.`invtype`', 'dt' => 'invtype', 'field' => 'invtype' ),
@@ -42,15 +46,16 @@ $joinQuery = "FROM `tbl_invoice` AS `u` LEFT JOIN `tbl_customer` AS `ua` ON (`ua
 
 $extraWhere = "`u`.`status` IN (1, 2) AND `u`.`tbl_location_idtbl_location` = " . $locationID;
 
-// NEW: Sale Type filter (1 = Retail, 2 = Whole Sale) — direct column on tbl_invoice
+// Sale Type filter (1 = Retail, 2 = Whole Sale) — direct column on tbl_invoice
 if(isset($_POST['filtersaletype']) && $_POST['filtersaletype'] !== ''){
     $filtersaletype = intval($_POST['filtersaletype']);
     $extraWhere .= " AND `u`.`saletype` = " . $filtersaletype;
 }
 
-// NEW: Payment Method filter (1 = Cash, 2 = Card) — lives on tbl_invoice_payment_detail,
-// reached via tbl_invoice_payment_has_tbl_invoice. An invoice can have more than one
-// payment line, so we check existence rather than joining (which would duplicate rows).
+// Payment Method filter (1 = Cash, 2 = Card, 3 = Cheque, 4 = Online) — lives on
+// tbl_invoice_payment_detail, reached via tbl_invoice_payment_has_tbl_invoice.
+// An invoice can have more than one payment line, so we check existence rather
+// than joining (which would duplicate rows).
 if(isset($_POST['filterpaymentmethod']) && $_POST['filterpaymentmethod'] !== ''){
     $filterpaymentmethod = intval($_POST['filterpaymentmethod']);
     $extraWhere .= " AND EXISTS (
@@ -63,10 +68,10 @@ if(isset($_POST['filterpaymentmethod']) && $_POST['filterpaymentmethod'] !== '')
     )";
 }
 
-// NEW: always sort by idtbl_invoice DESC (newest invoice first), regardless of what
-// DataTables sends for column ordering.
+// ALWAYS newest invoice first. Column 0 of the page is bound to idtbl_invoice,
+// so sorting on request column 0 sorts by invoice id.
 $_POST['order'] = array(
-    array( 'column' => 1, 'dir' => 'desc' )
+    array( 'column' => 0, 'dir' => 'desc' )
 );
 
 echo json_encode(

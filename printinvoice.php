@@ -25,13 +25,18 @@ if (!$result || $result->num_rows === 0) {
 }
 $invoice = $result->fetch_assoc();
 
+// Number shown on the printout: the new prefixed number (e.g. 26NOV_LV1_08220)
+// when the invoice has one, otherwise the old taxinvoice_no.
+$displayInvoiceNo = (!empty($invoice['taxinvnum_new']))
+    ? $invoice['taxinvnum_new']
+    : $invoice['taxinvoice_no'];
+
+// tbl_invoice.vattype is an INT column: 0 = inclusive, 1 = exclusive.
+// Old text values ('inclusive' / 'exclusive') are still understood.
 // 'exclusive' = line prices did NOT include VAT (VAT was added to the totals)
 // 'inclusive' = line prices already included VAT (VAT was extracted, not added again)
-$vatType = strtolower(trim($invoice['vattype'] ?? 'inclusive'));
-if (!in_array($vatType, ['inclusive', 'exclusive'], true)) {
-    $vatType = 'inclusive';
-}
-$isVatInclusive = ($vatType === 'inclusive');
+$vatTypeRaw = strtolower(trim((string)($invoice['vattype'] ?? '0')));
+$isVatInclusive = !in_array($vatTypeRaw, ['1', 'exclusive'], true);
 
 $detailSql = "SELECT d.`qty`, d.`unitprice`, d.`saleprice`, p.`product_code`, p.`product_name`
               FROM `tbl_invoice_detail` d
@@ -136,7 +141,7 @@ $vatTypeLabel       = $isVatInclusive ? 'Inclusive' : 'Exclusive';
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Tax Invoice <?php echo htmlspecialchars($invoice['taxinvoice_no']); ?></title>
+<title>Tax Invoice <?php echo htmlspecialchars($displayInvoiceNo); ?></title>
 <style>
     * {
         margin: 0;
@@ -371,7 +376,7 @@ $vatTypeLabel       = $isVatInclusive ? 'Inclusive' : 'Exclusive';
                     <tr>
                         <th class="label-col">Tax Invoice No.</th>
                         <th class="sep-col">:</th>
-                        <td><?php echo htmlspecialchars($invoice['taxinvoice_no']); ?></td>
+                        <td><?php echo htmlspecialchars($displayInvoiceNo); ?></td>
                     </tr>
                 </table>
             </td>

@@ -337,6 +337,8 @@ include "include/topnavbar.php";
                         <table id="invoicesTable" class="table table-bordered table-hover table-sm w-100">
                             <thead class="thead-light">
                                 <tr>
+                                    <th>ID</th>
+                                    <th>New No</th>
                                     <th>Invoice No</th>
                                     <th>Date</th>
                                     <th>Customer</th>
@@ -705,42 +707,43 @@ $(document).ready(function () {
         }
 
         var billType = currentBillType();
-            var payments = [];
-            $('#paymentsTableBody tr').each(function () {
-                var $row = $(this);
-                payments.push({
-                    method: $row.data('method'), bank: $row.data('bank'),
-                    chequeno: $row.data('chequeno'), chequedate: $row.data('chequedate'),
-                    cardlast4: $row.data('cardlast4'), onlineref: $row.data('onlineref'),
-                    amount: $row.data('amount')
-                });
+        var payments = [];
+        $('#paymentsTableBody tr').each(function () {
+            var $row = $(this);
+            payments.push({
+                method: $row.data('method'), bank: $row.data('bank'),
+                chequeno: $row.data('chequeno'), chequedate: $row.data('chequedate'),
+                cardlast4: $row.data('cardlast4'), onlineref: $row.data('onlineref'),
+                amount: $row.data('amount')
             });
+        });
 
-            if (billType === '1' && payments.length === 0) {
-                alert('Please add at least one payment for a cash invoice.');
-                return;
-            }
+        if (billType === '1' && payments.length === 0) {
+            alert('Please add at least one payment for a cash invoice.');
+            return;
+        }
 
-            var payload = {
-                customerid: customerId,
-                invoicedate: $('#invoicedate').val(),
-                discounttotal: $('#discounttotal').val() || 0,
-                vatpercent: $('#vatpercent').val() || 0,
-                vattype: currentVatType(),
-                saletype: currentSaleType(),
-                billtype: billType,
-                payments: JSON.stringify(payments),
-                productid: productIds,
-                qty: qtys,
-                unitprice: unitPrices
-            };
+        var payload = {
+            customerid: customerId,
+            invoicedate: $('#invoicedate').val(),
+            discounttotal: $('#discounttotal').val() || 0,
+            vatpercent: $('#vatpercent').val() || 0,
+            vattype: currentVatType(),
+            saletype: currentSaleType(),
+            billtype: billType,
+            payments: JSON.stringify(payments),
+            productid: productIds,
+            qty: qtys,
+            unitprice: unitPrices
+        };
 
         var $btn = $(this).find('button[type=submit]').prop('disabled', true);
 
         $.post('process/vatinvoiceprocess.php', payload, function (res) {
             $btn.prop('disabled', false);
             if (res.status === 'success') {
-                alert('Invoice ' + res.taxinvoiceno + ' saved successfully.');
+                // show the new prefixed number (taxinvnum_new); fall back to the old number
+                alert('Invoice ' + (res.taxinvnum || res.taxinvoiceno) + ' saved successfully.');
                 window.open('printinvoice.php?id=' + res.invoiceid, '_blank');
                 resetForm();
                 invoicesTable.ajax.reload(null, false);
@@ -779,7 +782,17 @@ $(document).ready(function () {
             type: 'POST'
         },
         columns: [
-            { data: 'taxinvoice_no' },
+            // hidden: used only for "newest first" sorting
+            { data: 'idtbl_invoice', visible: false, searchable: false },
+            // hidden: new number, kept so the search box can find it
+            { data: 'taxinvnum_new', visible: false },
+            {
+                data: 'taxinvoice_no',
+                render: function (data, type, row) {
+                    // invoices saved from 2026/11/16 have the new number; older ones don't
+                    return (row.taxinvnum_new && row.taxinvnum_new !== '') ? row.taxinvnum_new : data;
+                }
+            },
             {
                 data: 'date',
                 render: function (data) {
@@ -814,7 +827,7 @@ $(document).ready(function () {
                 }
             }
         ],
-        order: [[0, 'desc']]
+        order: [[0, 'desc']]   // newest invoice first (by invoice id)
     });
 });
 </script>

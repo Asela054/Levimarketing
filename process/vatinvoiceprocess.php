@@ -25,6 +25,8 @@ $vatType = strtolower(trim($_POST['vattype'] ?? 'inclusive'));
 if (!in_array($vatType, ['inclusive', 'exclusive'], true)) {
     $vatType = 'inclusive';
 }
+// tbl_invoice.vattype is an INT column, so store a number (0 = inclusive, 1 = exclusive)
+$vatTypeInt = ($vatType === 'exclusive') ? 1 : 0;
 
 $billType = intval($_POST['billtype'] ?? 1); // 1 = Cash, 2 = Credit
 if (!in_array($billType, [1, 2], true)) {
@@ -110,7 +112,7 @@ if ($vatType === 'inclusive') {
 } else {
     // Entered prices do NOT include VAT. Add VAT on top of the discounted net total.
     $netTotal        = $total - $discountTotal;
-    $vatAmount        = $netTotal * $vatPercent / 100;
+    $vatAmount       = $netTotal * $vatPercent / 100;
     $netTotalWithVat = $netTotal + $vatAmount; // VAT added on top
 }
 
@@ -125,28 +127,56 @@ if ($billType === 2) {
 
 $updatedatetime = date('Y-m-d H:i:s');
 
+// ---- Invoice number prefix: {yy}{MMM}_LV1_  e.g. 26NOV_LV1_ ----
+$companyID = 1; // Levi Marketing Pvt Ltd
+$qqqqMap = [
+    1 => 'LV1',
+];
+$qqqq = $qqqqMap[$companyID] ?? 'GEN1';
+
+$yy  = date('y', strtotime($invoiceDate));
+$mmm = strtoupper(date('M', strtotime($invoiceDate)));
+$taxDatePrefix = $yy . $mmm . '_' . $qqqq . '_';
+
+// ---- Generate next TAX invoice counter (starts at 8220) ----
+// GET_LOCK makes number generation one-at-a-time so two users saving
+// at the same moment cannot receive the same number.
+// taxinvnum_new holds values like 26NOV_LV1_08220, so the counter is the
+// part after the last "_". Old plain values (e.g. 8220) are read the same way.
+$taxStart = 8220;
+$lockRes = $conn->query("SELECT GET_LOCK('inv_tax_no', 10) AS l")->fetch_assoc();
+if (intval($lockRes['l']) !== 1) {
+    echo json_encode(['status' => 'error', 'message' => 'Could not generate invoice number, please try again.']);
+    exit;
+}
+$rowMax = $conn->query("SELECT MAX(CAST(SUBSTRING_INDEX(`taxinvnum_new`, '_', -1) AS UNSIGNED)) AS m FROM `tbl_invoice` WHERE `taxinvnum_new` IS NOT NULL AND `taxinvnum_new` != ''")->fetch_assoc();
+$taxCounter = ($rowMax['m'] === null) ? $taxStart : max(intval($rowMax['m']) + 1, $taxStart);
+
+// Saved in taxinvnum_new, e.g. 26NOV_LV1_08220
+$taxInvNum = $taxDatePrefix . sprintf('%05d', $taxCounter);
+
 $conn->begin_transaction();
 
 try {
     // ---- Insert invoice header (taxinvoice_no filled in after we know the new id) ----
     $stmt = $conn->prepare(
         "INSERT INTO `tbl_invoice` (
-            `invtype`, `manuelinvno`, `taxinvoice_no`, `date`, `total`, `discounttotal`, `nettotal`,
+            `invtype`, `manuelinvno`, `taxinvoice_no`, `taxinvnum_new`, `date`, `total`, `discounttotal`, `nettotal`,
             `vattype`, `vatpercent`, `vatamount`, `nettotal_with_vat`, `saletype`, `paymentmethod`, `paymentcomplete`,
             `payment_created`, `chequesend`, `companydiffsend`, `ref_id`, `trackingnumber`, `deliverystatus`,
             `addtoaccountstatus`, `status`, `qtycancelstatus`, `qtyreason`, `qty_checked_user`,
             `qty_updatedatetime`, `updatedatetime`, `tbl_user_idtbl_user`, `customerid`, `tbl_location_idtbl_location`
         ) VALUES (
-            1, 0, '', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, 0, 0, 0, 1, 0, '', 0, CURDATE(), ?, ?, ?, ?
+            1, 0, '', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, 0, 0, 0, 1, 0, '', 0, CURDATE(), ?, ?, ?, ?
         )"
     );
 
     if (!$stmt) { throw new Exception($conn->error); }
 
     $stmt->bind_param(
-        'sdddsdddiiisiii',
-        $invoiceDate, $total, $discountTotal, $netTotal,
-        $vatType, $vatPercent, $vatAmount, $netTotalWithVat,
+        'ssdddidddiiisiii',
+        $taxInvNum, $invoiceDate, $total, $discountTotal, $netTotal,
+        $vatTypeInt, $vatPercent, $vatAmount, $netTotalWithVat,
         $saleType, $billType, $paymentComplete,
         $updatedatetime, $userID, $customerID, $locationID
     );
@@ -154,18 +184,8 @@ try {
     $invoiceID = $conn->insert_id;
     $stmt->close();
 
-    // ---- Now that we have a guaranteed-unique id, build the invoice number ----
-    // Format: {yy}{MMM}_LV1_{00000}  e.g. 26JUL_LV1_00007
-    $companyID = 1; // Levi Marketing Pvt Ltd
-    $qqqqMap = [
-        1 => 'LV1',
-    ];
-    $qqqq = $qqqqMap[$companyID] ?? 'GEN1';
-
-    $yy  = date('y', strtotime($invoiceDate));
-    $mmm = strtoupper(date('M', strtotime($invoiceDate)));
-    $taxDatePrefix = $yy . $mmm . '_' . $qqqq . '_';
-
+    // ---- taxinvoice_no keeps the OLD format: prefix + invoice id ----
+    // e.g. 26NOV_LV1_08358
     $taxInvoiceNo = $taxDatePrefix . sprintf('%05d', $invoiceID);
 
     $updateStmt = $conn->prepare("UPDATE `tbl_invoice` SET `taxinvoice_no` = ? WHERE `idtbl_invoice` = ?");
@@ -317,15 +337,18 @@ try {
     // if $billType === 2 (Credit), nothing is written to any payment table
 
     $conn->commit();
+    $conn->query("SELECT RELEASE_LOCK('inv_tax_no')");
 
     echo json_encode([
         'status'       => 'success',
         'message'      => 'Invoice saved successfully.',
         'invoiceid'    => $invoiceID,
         'taxinvoiceno' => $taxInvoiceNo,
+        'taxinvnum'    => $taxInvNum,
     ]);
 } catch (Exception $e) {
     $conn->rollback();
+    $conn->query("SELECT RELEASE_LOCK('inv_tax_no')");
     echo json_encode([
         'status'  => 'error',
         'message' => 'Failed to save invoice: ' . $e->getMessage(),

@@ -51,6 +51,18 @@ else{$halfstatus=0;$fullstatus=1;$paycomplete=1;}
 $today=date('Y-m-d');
 $updatedatetime=date('Y-m-d H:i:s');
 
+// ---- Generate next NON-TAX invoice number (starts at 8300) ----
+// GET_LOCK makes number generation one-at-a-time so two users saving
+// at the same moment cannot receive the same number.
+$nontaxStart = 8300;
+$lockRes = $conn->query("SELECT GET_LOCK('inv_nontax_no', 10) AS l")->fetch_assoc();
+if (intval($lockRes['l']) !== 1) {
+    echo "Database Error: Could not generate invoice number, please try again.";
+    die();
+}
+$rowMax = $conn->query("SELECT MAX(CAST(`nontaxinvnum_new` AS UNSIGNED)) AS m FROM `tbl_invoice` WHERE `nontaxinvnum_new` IS NOT NULL AND `nontaxinvnum_new` != ''")->fetch_assoc();
+$nontaxInvNum = ($rowMax['m'] === null) ? $nontaxStart : max(intval($rowMax['m']) + 1, $nontaxStart);
+
 $conn->begin_transaction();
 
 try {
@@ -77,7 +89,7 @@ try {
         $menualinvoice=NULL;
     }
 
-    $insertinvoice="INSERT INTO `tbl_invoice`(`invtype`, `manuelinvno`, `taxinvoice_no`, `date`, `total`, `discounttotal`, `nettotal`, `vattype`, `vatpercent`, `vatamount`, `nettotal_with_vat`, `saletype`, `paymentmethod`, `paymentcomplete`, `payment_created`, `chequesend`, `companydiffsend`, `ref_id`, `trackingnumber`, `deliverystatus`, `addtoaccountstatus`, `pricechangestatus`, `changeapproveuser`, `changedatetime`, `status`, `invoice_cancel_reason`, `qtycancelstatus`, `qtyreason`, `qty_checked_user`, `qty_updatedatetime`, `updatedatetime`, `tbl_user_idtbl_user`, `customerid`, `tbl_location_idtbl_location`) VALUES ('0','$menualinvoice','','$today','$total','$distotal','$nettotal','0','0','0','0','$saletype','$billtype','$paycomplete','0','0','0','0','0','0','0','$priceeditstatus','$billapproveuser','$updatedatetime','1','-','0','-','0','$updatedatetime','$updatedatetime','$userID','$cusID','$locationID')";
+    $insertinvoice="INSERT INTO `tbl_invoice`(`invtype`, `manuelinvno`, `taxinvoice_no`, `nontaxinvnum_new`, `date`, `total`, `discounttotal`, `nettotal`, `vattype`, `vatpercent`, `vatamount`, `nettotal_with_vat`, `saletype`, `paymentmethod`, `paymentcomplete`, `payment_created`, `chequesend`, `companydiffsend`, `ref_id`, `trackingnumber`, `deliverystatus`, `addtoaccountstatus`, `pricechangestatus`, `changeapproveuser`, `changedatetime`, `status`, `invoice_cancel_reason`, `qtycancelstatus`, `qtyreason`, `qty_checked_user`, `qty_updatedatetime`, `updatedatetime`, `tbl_user_idtbl_user`, `customerid`, `tbl_location_idtbl_location`) VALUES ('0','$menualinvoice','','$nontaxInvNum','$today','$total','$distotal','$nettotal','0','0','0','0','$saletype','$billtype','$paycomplete','0','0','0','0','0','0','0','$priceeditstatus','$billapproveuser','$updatedatetime','1','-','0','-','0','$updatedatetime','$updatedatetime','$userID','$cusID','$locationID')";
     $conn->query($insertinvoice);
     $invoiceID=$conn->insert_id;
 
@@ -123,6 +135,7 @@ try {
     }
 
     $conn->commit();
+    $conn->query("SELECT RELEASE_LOCK('inv_nontax_no')");
 
     $actionObj=new stdClass();
     $actionObj->icon='fas fa-check-circle';
@@ -138,11 +151,13 @@ try {
     $obj->invoiceid=$invoiceID;
     $obj->billtype=$billtype;
     $obj->saletype=$saletype;
+    $obj->nontaxinvnum=$nontaxInvNum;
 
     echo json_encode($obj);
 
 } catch (Exception $e) {
     $conn->rollback();
+    $conn->query("SELECT RELEASE_LOCK('inv_nontax_no')");
     echo "Database Error: " . $e->getMessage();
     die();
 }

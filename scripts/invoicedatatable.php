@@ -24,6 +24,7 @@ $primaryKey = 'idtbl_invoice';
 $columns = array(
     array( 'db' => '`i`.`idtbl_invoice`',         'dt' => 'idtbl_invoice',     'field' => 'idtbl_invoice' ),
     array( 'db' => '`i`.`taxinvoice_no`',         'dt' => 'taxinvoice_no',     'field' => 'taxinvoice_no' ),
+    array( 'db' => '`i`.`taxinvnum_new`',         'dt' => 'taxinvnum_new',     'field' => 'taxinvnum_new' ),
     array( 'db' => '`i`.`date`',                  'dt' => 'date',              'field' => 'date' ),
     array( 'db' => '`c`.`name`',                  'dt' => 'name',      'field' => 'name' ),
     array( 'db' => '`i`.`nettotal`',              'dt' => 'nettotal',          'field' => 'nettotal' ),

@@ -30,7 +30,7 @@ include "include/topnavbar.php";
             <div class="container-fluid mt-2 p-0 p-2">
                 <div class="card">
                     <div class="card-body p-0 p-2">
-                        <!-- NEW: Filter controls -->
+                        <!-- Filter controls -->
                         <div class="row mb-2">
                             <div class="col-sm-6 col-md-3 mb-2 mb-md-0">
                                 <label class="small font-weight-bold text-dark mb-1">Sale Type</label>
@@ -51,7 +51,7 @@ include "include/topnavbar.php";
                                 </select>
                             </div>
                         </div>
-                        <!-- END NEW: Filter controls -->
+                        <!-- END Filter controls -->
                         <div class="row">
                             <div class="col-12">
                                 <div class="scrollbar pb-3" id="style-2">
@@ -154,7 +154,7 @@ include "include/topnavbar.php";
         var statuscheck='<?php echo $statuscheck; ?>';
         var deletecheck='<?php echo $deletecheck; ?>';
 
-        // CHANGED: capture the DataTable instance so filters can trigger ajax.reload()
+        // capture the DataTable instance so filters can trigger ajax.reload()
         var dataTable = $('#dataTable').DataTable( {
             "destroy": true,
             "processing": true,
@@ -168,17 +168,29 @@ include "include/topnavbar.php";
                     d.filterpaymentmethod = $('#filterpaymentmethod').val();
                 }
             },
-            "order": [[ 0, "desc" ]],
+            "order": [[ 0, "desc" ]],   // newest invoice first (column 0 is bound to idtbl_invoice)
             "columns": [
                 {
-                    "targets": -1,
+                    // Bound to idtbl_invoice so sorting = newest first.
+                    // The number shown is chosen below.
+                    "data": "idtbl_invoice",
                     "className": "",
-                    "data": null,
                     "render": function(data, type, full) {
+                        if (type !== 'display') {
+                            return data; // sort / search / type use the invoice id
+                        }
                         if (full['invtype'] == 1) {
-                            return full['taxinvoice_no'];
+                            // Tax invoice: show the new column (26NOV_LV1_08220) when the
+                            // invoice has one (saved from 2026/11/16), else the old number.
+                            return (full['taxinvnum_new'] && full['taxinvnum_new'] !== '')
+                                ? full['taxinvnum_new']
+                                : full['taxinvoice_no'];
                         } else {
-                            return 'INV-' + full['id'];
+                            // Normal invoice: show the new number (8300+) when it has one,
+                            // else the old INV-<manual no> format.
+                            return (full['nontaxinvnum_new'] && full['nontaxinvnum_new'] !== '')
+                                ? 'INV-' + full['nontaxinvnum_new']
+                                : 'INV-' + full['id'];
                         }
                     }
                 },
@@ -212,7 +224,7 @@ include "include/topnavbar.php";
                     "targets": -1,
                     "className": 'text-right',
                     "data": null,
-                    // NEW: expose the raw numeric total via a data attribute so footerCallback can read it
+                    // raw numeric total is returned for non-display types
                     "render": function(data, type, full) {
                         if(type === 'display'){
                             var payment=addCommas(parseFloat(full['total']).toFixed(2));
@@ -286,7 +298,7 @@ include "include/topnavbar.php";
                     $(row).addClass('table-info');
                 }
             },
-            // NEW: sum Total, Discount, and Nettotal across the current page
+            // sum Total, Discount, and Nettotal across the current page
             "footerCallback": function ( row, data, start, end, display ) {
                 var api = this.api();
 
@@ -297,7 +309,7 @@ include "include/topnavbar.php";
                     return !isNaN(parseFloat(i)) ? parseFloat(i) : 0;
                 };
 
-                // NEW: pull the full row objects for the current page instead of column().data(),
+                // pull the full row objects for the current page instead of column().data(),
                 // since Total/Discount/Nettotal columns use "data": null with a render function —
                 // api.column(n).data() would just return an array of nulls for those columns.
                 var pageRows = api.rows( { page: 'current' } ).data();
@@ -318,7 +330,7 @@ include "include/topnavbar.php";
             }
         } );
 
-        // NEW: reload the table whenever either filter changes
+        // reload the table whenever either filter changes
         $('#filtersaletype, #filterpaymentmethod').change(function(){
             dataTable.ajax.reload();
         });

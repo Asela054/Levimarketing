@@ -26,9 +26,29 @@ $companyTel = implode(' / ', array_filter([
 $companyEmail = $company['email'] ?? '';
 $companyTin   = '103464978'; // Supplier's TIN
 
-$sqlinvoiceinfo="SELECT `tbl_invoice`.`idtbl_invoice`, `tbl_invoice`.`manuelinvno`, `tbl_invoice`.`date`, `tbl_invoice`.`total`, `tbl_invoice`.`discounttotal`, `tbl_invoice`.`nettotal`, `tbl_invoice`.`paymentcomplete`, `tbl_invoice`.`saletype`, `tbl_invoice`.`customerid`, `tbl_customer`.`name`, `tbl_customer`.`address` FROM `tbl_invoice` LEFT JOIN `tbl_customer` ON `tbl_customer`.`idtbl_customer`=`tbl_invoice`.`customerid` WHERE `tbl_invoice`.`status`=1 AND `tbl_invoice`.`idtbl_invoice`='$recordID'";
+$sqlinvoiceinfo="SELECT `tbl_invoice`.`idtbl_invoice`, `tbl_invoice`.`manuelinvno`, `tbl_invoice`.`nontaxinvnum_new`, `tbl_invoice`.`date`, `tbl_invoice`.`total`, `tbl_invoice`.`discounttotal`, `tbl_invoice`.`nettotal`, `tbl_invoice`.`paymentcomplete`, `tbl_invoice`.`saletype`, `tbl_invoice`.`customerid`, `tbl_customer`.`name`, `tbl_customer`.`address` FROM `tbl_invoice` LEFT JOIN `tbl_customer` ON `tbl_customer`.`idtbl_customer`=`tbl_invoice`.`customerid` WHERE `tbl_invoice`.`status`=1 AND `tbl_invoice`.`idtbl_invoice`='$recordID'";
 $resultinvoiceinfo =$conn-> query($sqlinvoiceinfo);
 $rowinvoiceinfo = $resultinvoiceinfo-> fetch_assoc();
+
+// Invoice number to display:
+//  - invoices dated 2026-11-16 or later -> nontaxinvnum_new
+//  - invoices dated before 2026-11-16   -> manuelinvno
+//  - if nontaxinvnum_new is empty, falls back to manuelinvno, then the system invoice ID
+$invNumberCutoff = '2026-11-16';
+$invDateOnly = date('Y-m-d', strtotime($rowinvoiceinfo['date']));
+$invNo = '';
+if ($invDateOnly >= $invNumberCutoff && !empty($rowinvoiceinfo['nontaxinvnum_new'])) {
+    $invNo = $rowinvoiceinfo['nontaxinvnum_new'];
+}
+// nontaxinvnum_new not set yet (or older invoice) -> use manual invoice no
+if (empty($invNo) && !empty($rowinvoiceinfo['manuelinvno'])) {
+    $invNo = $rowinvoiceinfo['manuelinvno'];
+}
+// last resort -> system invoice ID
+if (empty($invNo)) {
+    $invNo = $rowinvoiceinfo['idtbl_invoice'];
+}
+$displayInvNo = 'INV-' . $invNo;
 
 $sqlpayment="SELECT SUM(`payment`) AS `sumpayment` FROM `tbl_invoice_payment` LEFT JOIN `tbl_invoice_payment_has_tbl_invoice` ON `tbl_invoice_payment_has_tbl_invoice`.`tbl_invoice_payment_idtbl_invoice_payment`=`tbl_invoice_payment`.`idtbl_invoice_payment` WHERE `tbl_invoice_payment_has_tbl_invoice`.`tbl_invoice_idtbl_invoice`='$recordID'";
 $resultpayment =$conn-> query($sqlpayment);
@@ -120,7 +140,7 @@ $isRetail = ($rowinvoiceinfo['saletype'] == 1);
             </tr>
             <tr>
                 <td style="text-align: left; font-size:14px;">Invoice No.</td>
-                <td style="text-align: right; font-size:14px;"><?php echo !empty($rowinvoiceinfo['manuelinvno']) ? 'INV-' .$rowinvoiceinfo['manuelinvno'] : 'INV-' . $rowinvoiceinfo['idtbl_invoice']; ?></td>
+                <td style="text-align: right; font-size:14px;"><?php echo htmlspecialchars($displayInvNo); ?></td>
             </tr>
             <tr>
                 <td style="text-align: left; font-size:14px;border-bottom:1px dotted black;">Cashier</td>
@@ -326,7 +346,7 @@ $isRetail = ($rowinvoiceinfo['saletype'] == 1);
                     <p style="margin:0px;font-size:13px;font-weight:normal;text-transform: uppercase;"><?php echo $companyAddress ?></p>
                     <p style="margin:0px;font-size:13px;font-weight:normal;"><?php echo $companyTel ?></p>
                     <p style="margin:0px;font-size:13px;font-weight:normal;"><u>E-Mail: <?php echo $companyEmail ?></u></p>
-                    <p style="margin:0px;font-size:13px;font-weight:normal;">Invoice No: INV-<?php echo htmlspecialchars(!empty($rowinvoiceinfo['manuelinvno']) ? $rowinvoiceinfo['manuelinvno'] : 'INV-' . $rowinvoiceinfo['idtbl_invoice']); ?></p>
+                    <p style="margin:0px;font-size:13px;font-weight:normal;">Invoice No: <?php echo htmlspecialchars($displayInvNo); ?></p>
                     <p style="margin:0px;font-size:13px;font-weight:normal;">Date: <?php echo htmlspecialchars($rowinvoiceinfo['date']); ?></p>
                 </td>
             </tr>
