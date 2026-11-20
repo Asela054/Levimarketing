@@ -43,7 +43,7 @@ include "include/topnavbar.php";
                                     <div class="col-3">
                                         <label class="small font-weight-bold text-dark">Invoice / Tax Invoice Search</label>
                                         <div class="input-group input-group-sm">
-                                            <input type="text" class="form-control" placeholder="Invoice No or Tax Invoice No" aria-label="Invoice Number" aria-describedby="button-addon2" id="formInvNum">
+                                            <input type="text" class="form-control" placeholder="Invoice No / Tax Invoice No (old or new)" aria-label="Invoice Number" aria-describedby="button-addon2" id="formInvNum">
                                             <div class="input-group-append">
                                                 <button class="btn btn-outline-dark" type="button" id="formSearchBtn"><i class="fas fa-search"></i>&nbsp;Search</button>
                                             </div>

@@ -280,6 +280,7 @@ include "include/topnavbar.php";
                     "render": function (data, type, full) {
                         var button = '';
                         button += '<button class="btn btn-outline-dark btn-sm mr-1 btnviewpayment" data-toggle="tooltip" data-placement="bottom" title="View Payment" id="' + full['idtbl_supplier_payment'] + '"><i class="far fa-eye"></i></button>';
+                        button += '<a href="supplierpaymentprint.php?recordID=' + full['idtbl_supplier_payment'] + '" target="_blank" class="btn btn-outline-secondary btn-sm mr-1" data-toggle="tooltip" data-placement="bottom" title="Print Payment"><i class="fas fa-print"></i></a>';
                         if (full['status'] == 1) {
                             if (full['confirm_status'] == 0) {
                                 button += '<button class="btn btn-outline-orange btn-sm mr-1 btnapprovepayment" data-toggle="tooltip" data-placement="bottom" title="Approve Payment" id="' + full['idtbl_supplier_payment'] + '"><i class="fas fa-times"></i></button>';
