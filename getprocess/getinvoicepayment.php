@@ -12,14 +12,26 @@ if(!empty($_POST['invoiceno'])){
     // Allow pasting the value as displayed in the table (e.g. "TAX-..." or "INV-...")
     $invoiceno = preg_replace('/^(TAX-|INV-)/i', '', $invoiceno);
 
-    // Match either the regular manual invoice number OR the tax invoice number.
-    // manuelinvno is cast to CHAR because it's an int column - without the cast, MySQL
-    // silently converts a non-numeric search string to 0 and can match an unrelated
-    // invoice whose manuelinvno happens to be 0.
-    $checkSql = "SELECT `idtbl_invoice`, `paymentcomplete`, `status`, `tbl_location_idtbl_location`, `manuelinvno`, `taxinvoice_no` 
-                 FROM `tbl_invoice` 
-                 WHERE (CAST(`manuelinvno` AS CHAR)='".$conn->real_escape_string($invoiceno)."' OR `taxinvoice_no`='".$conn->real_escape_string($invoiceno)."') 
-                 LIMIT 1";
+    // Match the number against ALL invoice-number columns:
+    //   manuelinvno, taxinvoice_no (old numbering) and nontaxinvnum_new, taxinvnum_new (new numbering).
+    // Everything is compared as CHAR - comparing a text search against an int column makes MySQL
+    // convert it to 0 and match unrelated invoices whose number is 0 (e.g. tax invoices' manuelinvno).
+    // Old and new numbers can overlap (e.g. manuelinvno 8300 on one invoice and nontaxinvnum_new 8300
+    // on another), so ALL matches are returned instead of LIMIT 1 - the date column tells them apart.
+    $esc = $conn->real_escape_string($invoiceno);
+    $matchWhere = "(CAST(`tbl_invoice`.`manuelinvno` AS CHAR)='$esc'
+                    OR CAST(`tbl_invoice`.`taxinvoice_no` AS CHAR)='$esc'
+                    OR CAST(`tbl_invoice`.`nontaxinvnum_new` AS CHAR)='$esc'
+                    OR CAST(`tbl_invoice`.`taxinvnum_new` AS CHAR)='$esc')";
+    if ($invoiceno === '0') {
+        // "0" is the placeholder value on tax invoices, never a real number
+        echo '<div class="alert alert-warning">This invoice was not found.</div>';
+        return;
+    }
+
+    $checkSql = "SELECT `idtbl_invoice`, `paymentcomplete`, `status`, `tbl_location_idtbl_location`
+                 FROM `tbl_invoice`
+                 WHERE $matchWhere";
     $checkResult = $conn->query($checkSql);
 
     if($checkResult === false){
@@ -32,28 +44,39 @@ if(!empty($_POST['invoiceno'])){
         return;
     }
 
-    $invoiceRow = $checkResult->fetch_assoc();
+    $hasActive = false;
+    $hasActiveInLocation = false;
+    $hasUnpaidActiveInLocation = false;
 
-    if((int)$invoiceRow['status'] !== 1){
+    while($chkRow = $checkResult->fetch_assoc()){
+        if((int)$chkRow['status'] !== 1){
+            continue;
+        }
+        $hasActive = true;
+        if((int)$chkRow['tbl_location_idtbl_location'] === (int)$locationID){
+            $hasActiveInLocation = true;
+            if((int)$chkRow['paymentcomplete'] !== 1){
+                $hasUnpaidActiveInLocation = true;
+            }
+        }
+    }
+
+    if(!$hasActive){
         echo '<div class="alert alert-warning">This invoice is not active.</div>';
         return;
     }
 
-    if((int)$invoiceRow['tbl_location_idtbl_location'] !== (int)$locationID){
+    if(!$hasActiveInLocation){
         echo '<div class="alert alert-warning">This invoice belongs to a different location.</div>';
         return;
     }
 
-    if((int)$invoiceRow['paymentcomplete'] === 1){
+    if(!$hasUnpaidActiveInLocation){
         echo '<div class="alert alert-info">This invoice is already fully paid.</div>';
         return;
     }
 
-    // Use the actual invoice number found (manuelinvno) to pull the full payment breakdown,
-    // regardless of whether the user searched by manuelinvno or taxinvoice_no
-    $matchedInvNo = $invoiceRow['manuelinvno'];
-
-    $sql="SELECT `tbl_invoice`.`idtbl_invoice`, `tbl_invoice`.`manuelinvno`, `tbl_invoice`.`taxinvoice_no`, `tbl_invoice`.`date`, `tbl_invoice`.`total`, SUM(`tbl_invoice_payment_has_tbl_invoice`.`payamount`) AS `payamount` FROM `tbl_invoice` LEFT JOIN `tbl_invoice_payment_has_tbl_invoice` ON `tbl_invoice_payment_has_tbl_invoice`.`tbl_invoice_idtbl_invoice`=`tbl_invoice`.`idtbl_invoice` WHERE `tbl_invoice`.`manuelinvno`='".$conn->real_escape_string($matchedInvNo)."' AND `tbl_invoice`.`status`=1 AND `tbl_invoice`.`paymentcomplete`=0 AND `tbl_invoice`.`tbl_location_idtbl_location`='$locationID' GROUP BY `tbl_invoice`.`idtbl_invoice`";
+    $sql="SELECT `tbl_invoice`.`idtbl_invoice`, `tbl_invoice`.`manuelinvno`, `tbl_invoice`.`taxinvoice_no`, `tbl_invoice`.`nontaxinvnum_new`, `tbl_invoice`.`taxinvnum_new`, `tbl_invoice`.`date`, `tbl_invoice`.`total`, SUM(`tbl_invoice_payment_has_tbl_invoice`.`payamount`) AS `payamount` FROM `tbl_invoice` LEFT JOIN `tbl_invoice_payment_has_tbl_invoice` ON `tbl_invoice_payment_has_tbl_invoice`.`tbl_invoice_idtbl_invoice`=`tbl_invoice`.`idtbl_invoice` WHERE $matchWhere AND `tbl_invoice`.`status`=1 AND `tbl_invoice`.`paymentcomplete`=0 AND `tbl_invoice`.`tbl_location_idtbl_location`='$locationID' GROUP BY `tbl_invoice`.`idtbl_invoice`";
     $result=$conn->query($sql);
 }
 else if(!empty($_POST['customerID'])){
@@ -107,7 +130,7 @@ else if(!empty($_POST['customerID'])){
         return;
     }
 
-    $sql="SELECT `tbl_invoice`.`idtbl_invoice`, `tbl_invoice`.`manuelinvno`, `tbl_invoice`.`taxinvoice_no`, `tbl_invoice`.`date`, `tbl_invoice`.`total`, SUM(`tbl_invoice_payment_has_tbl_invoice`.`payamount`) AS `payamount` FROM `tbl_invoice` LEFT JOIN `tbl_invoice_payment_has_tbl_invoice` ON `tbl_invoice_payment_has_tbl_invoice`.`tbl_invoice_idtbl_invoice`=`tbl_invoice`.`idtbl_invoice` WHERE `tbl_invoice`.`customerid`='".$conn->real_escape_string($customerID)."' AND `tbl_invoice`.`status`=1 AND `tbl_invoice`.`paymentcomplete`=0 AND `tbl_invoice`.`tbl_location_idtbl_location`='$locationID' GROUP BY `tbl_invoice`.`idtbl_invoice`";
+    $sql="SELECT `tbl_invoice`.`idtbl_invoice`, `tbl_invoice`.`manuelinvno`, `tbl_invoice`.`taxinvoice_no`, `tbl_invoice`.`nontaxinvnum_new`, `tbl_invoice`.`taxinvnum_new`, `tbl_invoice`.`date`, `tbl_invoice`.`total`, SUM(`tbl_invoice_payment_has_tbl_invoice`.`payamount`) AS `payamount` FROM `tbl_invoice` LEFT JOIN `tbl_invoice_payment_has_tbl_invoice` ON `tbl_invoice_payment_has_tbl_invoice`.`tbl_invoice_idtbl_invoice`=`tbl_invoice`.`idtbl_invoice` WHERE `tbl_invoice`.`customerid`='".$conn->real_escape_string($customerID)."' AND `tbl_invoice`.`status`=1 AND `tbl_invoice`.`paymentcomplete`=0 AND `tbl_invoice`.`tbl_location_idtbl_location`='$locationID' GROUP BY `tbl_invoice`.`idtbl_invoice`";
     $result=$conn->query($sql);
 }
 
@@ -119,6 +142,14 @@ if($result === false){
 if($result === null || $result->num_rows === 0){
     echo '<div class="alert alert-warning">This invoice was not found in this location.</div>';
     return;
+}
+// Number shown in the table - new numbering first, then the old columns
+function paymentInvDisplayNo($row){
+    if(!empty($row['taxinvnum_new']))    return 'TAX-'.$row['taxinvnum_new'];
+    if(!empty($row['nontaxinvnum_new'])) return 'INV-'.$row['nontaxinvnum_new'];
+    if(!empty($row['taxinvoice_no']))    return 'TAX-'.$row['taxinvoice_no'];
+    if(!empty($row['manuelinvno']))      return 'INV-'.$row['manuelinvno'];
+    return 'INV-'.$row['idtbl_invoice'];
 }
 ?>
 <table class="table table-striped table-bordered table-sm" id="paymentDetailTable">
@@ -140,7 +171,7 @@ if($result === null || $result->num_rows === 0){
         <?php while($row=$result->fetch_assoc()){ ?>
         <tr>
             <td class="d-none"><?php echo $row['idtbl_invoice']; ?></td>
-            <td><?php echo !empty($row['taxinvoice_no']) ? 'TAX-'.$row['taxinvoice_no'] : 'INV-'.$row['manuelinvno']; ?></td>
+            <td><?php echo htmlspecialchars(paymentInvDisplayNo($row)); ?></td>
             <td class="d-none">&nbsp;</td>
             <td><?php echo $row['date']; ?></td>
             <td class="text-right"><?php echo sprintf('%.2f', $row['total']); ?></td>
