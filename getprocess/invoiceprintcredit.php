@@ -405,22 +405,54 @@ $isRetail = ($rowinvoiceinfo['saletype'] == 1);
             $invoiceRows[] = $rowinvoicedetail;
         }
 
-        $itemsPerPage = 6;
-        $maxItemsOnTotalsPage = 3;
-        $itemPages = array_chunk($invoiceRows, $itemsPerPage);
+        $unitsPerPage      = 6;   // lines allowed on a normal page
+        $unitsOnTotalsPage = 3;   // lines allowed on the page that carries the totals
+        $charsPerLine      = 40;  // approx. characters that fit in the Item Description column
+
+        // how many printed lines a row will take
+        $rowUnits = function($row) use ($charsPerLine) {
+            return max(1, (int)ceil(mb_strlen(trim($row['product_name'])) / $charsPerLine));
+        };
+
+        // 1) fill pages by lines
+        $itemPages = [];
+        $cur = [];
+        $curUnits = 0;
+        foreach ($invoiceRows as $r) {
+            $u = $rowUnits($r);
+            if ($curUnits + $u > $unitsPerPage && !empty($cur)) {
+                $itemPages[] = $cur;
+                $cur = [];
+                $curUnits = 0;
+            }
+            $cur[] = $r;
+            $curUnits += $u;
+        }
+        if (!empty($cur)) $itemPages[] = $cur;
+
+        // 2) the last page also has to fit the totals block
         if (empty($itemPages)) {
-            $itemPages = [[]]; // still render one page (with totals) if there are no items
+            $itemPages = [[]];
         } else {
             $lastIdx = count($itemPages) - 1;
-            $lastChunk = $itemPages[$lastIdx];
-            // The page carrying the totals section has less room for items than a
-            // normal page, so cap it at $maxItemsOnTotalsPage and push any overflow
-            // into an extra page just before it.
-            if (count($lastChunk) > $maxItemsOnTotalsPage) {
-                $splitPoint = count($lastChunk) - $maxItemsOnTotalsPage;
-                $overflowPage = array_slice($lastChunk, 0, $splitPoint);
-                $totalsPage   = array_slice($lastChunk, $splitPoint);
-                array_splice($itemPages, $lastIdx, 1, [$overflowPage, $totalsPage]);
+            $last    = $itemPages[$lastIdx];
+
+            $lastUnits = 0;
+            foreach ($last as $r) { $lastUnits += $rowUnits($r); }
+
+            if ($lastUnits > $unitsOnTotalsPage) {
+                $totalsPage = [];
+                $u = 0;
+                for ($i = count($last) - 1; $i >= 0; $i--) {
+                    $ru = $rowUnits($last[$i]);
+                    if ($u + $ru > $unitsOnTotalsPage && !empty($totalsPage)) break;
+                    array_unshift($totalsPage, $last[$i]);
+                    $u += $ru;
+                }
+                $overflowPage = array_slice($last, 0, count($last) - count($totalsPage));
+                if (!empty($overflowPage)) {
+                    array_splice($itemPages, $lastIdx, 1, [$overflowPage, $totalsPage]);
+                }
             }
         }
         $lastPageIndex = count($itemPages) - 1;
