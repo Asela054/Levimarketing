@@ -2,8 +2,8 @@
 session_start();
 require_once('../connection/db.php');
 
-$paymentinoiceID=$_POST['paymentinoiceID'];
-$locationID=$_SESSION['location_id'];
+$paymentinoiceID=(int)$_POST['paymentinoiceID'];
+$locationID=(int)$_SESSION['location_id'];
 
 $query = mysqli_query($conn, "
     SELECT location, code, companyname, address, contact1, contact2, contact3, email
@@ -25,7 +25,7 @@ $companyTel = implode(' / ', array_filter([
 $companyEmail = $company['email'] ?? '';
 $companyTin   = '103464978'; // Supplier's TIN
 
-$sqlpaymentdetail="SELECT `tbl_invoice_payment_has_tbl_invoice`.*, `tbl_invoice`.`invtype`, `tbl_invoice`.`manuelinvno`, `tbl_invoice`.`taxinvoice_no`, `tbl_invoice`.`total` AS `invoicetotal` FROM `tbl_invoice_payment_has_tbl_invoice` LEFT JOIN `tbl_invoice` ON `tbl_invoice`.`idtbl_invoice`=`tbl_invoice_payment_has_tbl_invoice`.`tbl_invoice_idtbl_invoice` WHERE `tbl_invoice_payment_has_tbl_invoice`.`tbl_invoice_payment_idtbl_invoice_payment`='$paymentinoiceID'";
+$sqlpaymentdetail="SELECT `tbl_invoice_payment_has_tbl_invoice`.*, `tbl_invoice`.`invtype`, `tbl_invoice`.`manuelinvno`, `tbl_invoice`.`taxinvoice_no`, `tbl_invoice`.`nontaxinvnum_new`, `tbl_invoice`.`taxinvnum_new`, `tbl_invoice`.`total` AS `invoicetotal` FROM `tbl_invoice_payment_has_tbl_invoice` LEFT JOIN `tbl_invoice` ON `tbl_invoice`.`idtbl_invoice`=`tbl_invoice_payment_has_tbl_invoice`.`tbl_invoice_idtbl_invoice` WHERE `tbl_invoice_payment_has_tbl_invoice`.`tbl_invoice_payment_idtbl_invoice_payment`='$paymentinoiceID'";
 $resultpaymentdetail=$conn->query($sqlpaymentdetail);
 
 $sqlpayment="SELECT * FROM `tbl_invoice_payment` WHERE `idtbl_invoice_payment`='$paymentinoiceID' AND `status`=1";
@@ -74,10 +74,19 @@ $resultpaymentbank=$conn->query($sqlpaymentbank);
             </thead>
             <tbody>
                 <?php $i=1;while($rowpaymentdetail=$resultpaymentdetail->fetch_assoc()){ 
+                    // Same rule as the Invoice View / Payment Receipt lists:
+                    // use the new number when the invoice has one (saved from 2026/11/16),
+                    // otherwise fall back to the old number.
                     if ($rowpaymentdetail['invtype'] == 1) {
-                        $displayinvno = $rowpaymentdetail['taxinvoice_no'];
+                        // Tax invoice: new number (e.g. 26NOV_LV1_08220), else old tax invoice no
+                        $displayinvno = !empty($rowpaymentdetail['taxinvnum_new'])
+                            ? $rowpaymentdetail['taxinvnum_new']
+                            : $rowpaymentdetail['taxinvoice_no'];
                     } else {
-                        $displayinvno = 'INV-'.(!empty($rowpaymentdetail['manuelinvno']) ? $rowpaymentdetail['manuelinvno'] : $rowpaymentdetail['tbl_invoice_idtbl_invoice']);
+                        // Normal invoice: INV-<new number>, else old INV-<manual no>
+                        $displayinvno = !empty($rowpaymentdetail['nontaxinvnum_new'])
+                            ? 'INV-'.$rowpaymentdetail['nontaxinvnum_new']
+                            : 'INV-'.$rowpaymentdetail['manuelinvno'];
                     }
                 ?>
                 <tr>
