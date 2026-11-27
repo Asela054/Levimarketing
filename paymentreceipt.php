@@ -138,10 +138,21 @@ include "include/topnavbar.php";
                     "className": "",
                     "data": null,
                     "render": function(data, type, full) {
+                        // Same rule as the Invoice View list:
+                        // use the new number when the invoice has one (saved from 2026/11/16),
+                        // otherwise fall back to the old number.
+                        var has = function(v) { return v !== undefined && v !== null && v !== ''; };
+
                         if (full['invtype'] == 1) {
-                            return full['taxinvoice_no'];
+                            // Tax invoice: new column (e.g. 26NOV_LV1_08220), else old tax invoice no
+                            return has(full['taxinvnum_new'])
+                                ? full['taxinvnum_new']
+                                : (has(full['taxinvoice_no']) ? full['taxinvoice_no'] : '');
                         } else {
-                            return 'INV-' + full['manuelinvno'];
+                            // Normal invoice: INV-<new number (8300+)>, else old INV-<manual no>
+                            return has(full['nontaxinvnum_new'])
+                                ? 'INV-' + full['nontaxinvnum_new']
+                                : (has(full['manuelinvno']) ? 'INV-' + full['manuelinvno'] : '');
                         }
                     }
                 },

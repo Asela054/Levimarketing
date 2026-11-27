@@ -26,7 +26,7 @@ if ($invtype !== null) {
 
 if ($term !== '') {
     // Only active invoices (status = 1) are offered for return.
-    $where   .= " AND (taxinvoice_no LIKE ? OR manuelinvno LIKE ?)";
+    $where   .= " AND (taxinvnum_new LIKE ? OR nontaxinvnum_new LIKE ?)";
     $like     = "%{$term}%";
     $params[] = $like;
     $params[] = $like;
@@ -35,7 +35,7 @@ if ($term !== '') {
 
 // Fetch one extra row so we can tell Select2 whether there is a next page
 // without running a separate COUNT(*) query.
-$sql = "SELECT idtbl_invoice, invtype, manuelinvno, taxinvoice_no, date, total
+$sql = "SELECT idtbl_invoice, invtype, nontaxinvnum_new, taxinvnum_new, date, total
         FROM tbl_invoice
         $where
         ORDER BY date DESC, idtbl_invoice DESC
@@ -62,7 +62,7 @@ if ($hasMore) {
 }
 
 $results = array_map(function ($row) {
-    $displayNo = ((int) $row['invtype'] === 1) ? $row['taxinvoice_no'] : ('INV-' . $row['manuelinvno']);
+    $displayNo = ((int) $row['invtype'] === 1) ? $row['taxinvnum_new'] : ('INV-' . $row['nontaxinvnum_new']);
     $typeLabel = ((int) $row['invtype'] === 1) ? 'Tax' : 'Non-Tax';
     $amount    = number_format((float) $row['total'], 2);
 

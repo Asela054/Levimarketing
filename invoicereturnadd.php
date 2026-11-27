@@ -427,7 +427,7 @@ $('#invoiceNumber').on('change', function () {
 
             currentInvoiceID = data.invoice.idtbl_invoice;
 
-            document.getElementById('infoInvoiceNo').textContent = data.invoice.taxinvoice_no || data.invoice.manuelinvno;
+            document.getElementById('infoInvoiceNo').textContent = data.invoice.taxinvnum_new || data.invoice.nontaxinvnum_new;
             document.getElementById('infoInvoiceDate').textContent = data.invoice.date;
             document.getElementById('infoInvoiceTotal').textContent = money(data.invoice.total);
             document.getElementById('infoLineCount').textContent = data.lines.length;
