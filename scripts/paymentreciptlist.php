@@ -11,25 +11,46 @@ session_start();
  * - rather than via EXISTS - is correct here.
  *
  * FIXES applied vs the previous version of this script:
- * 1. Invoice ID now resolves to the invoice's tax/manual invoice number
- *    (COALESCE(taxinvoice_no, manuelinvno, idtbl_invoice)) instead of the raw
+ * 1. Invoice number (`invoiceno`) is now built from the invoice's number fields,
+ *    decided by the INVOICE date (see below), instead of the raw
  *    foreign key idtbl_invoice, matching the other invoice-related reports.
  * 2. Added Customer + Payment Method filters, using the `ue`/`uc` joins that
  *    were already present but only used for display, not filtering.
  * 3. Date/Week/Month/Date-Range filters have been removed - the report now
  *    always lists all matching receipts, filterable only by Customer and
  *    Payment Method.
+ *
+ * INVOICE NUMBER (`invoiceno`) - decided by the invoice date (`ub`.`date`):
+ *   before 2026-11-16 -> manuelinvno (non-tax)       / taxinvoice_no (tax)
+ *   from   2026-11-16 -> nontaxinvnum_new (non-tax)  / taxinvnum_new (tax)
+ * Displayed as "INV-<non-tax no> / <tax no>"; a number that is empty or 0 is skipped.
+ * If the invoice has neither number it falls back to INV-<idtbl_invoice>.
  */
 
 $table = 'tbl_invoice_payment';
 $primaryKey = 'idtbl_invoice_payment';
 
-// Invoice number: prefer taxinvoice_no, fall back to manuelinvno, then
-// idtbl_invoice as a last resort. Aliased explicitly since it's a computed
+// Invoices before this date use the old numbering, on/after use the new numbering
+$cutoffDate = '2026-11-16';
+
+$nonTaxExpr = "(CASE WHEN `ub`.`date` < '$cutoffDate' THEN `ub`.`manuelinvno` ELSE `ub`.`nontaxinvnum_new` END)";
+$taxExpr    = "(CASE WHEN `ub`.`date` < '$cutoffDate' THEN `ub`.`taxinvoice_no` ELSE `ub`.`taxinvnum_new` END)";
+
+// Final text shown in the table. Aliased explicitly since it's a computed
 // expression - ssp.customized.class.php reads rows back by the raw fetched
 // column name, and a bare expression with no AS would come back keyed by
 // the whole expression text rather than the intended 'invoiceno'.
-$invoiceNoExpr = "COALESCE(NULLIF(`ub`.`taxinvoice_no`, ''), `ub`.`manuelinvno`, `ub`.`idtbl_invoice`)";
+// (NULL when the payment has no invoice at all - the page shows '-')
+$invoiceNoExpr = "COALESCE(
+    NULLIF(
+        CONCAT_WS(' / ',
+            IF(IFNULL($nonTaxExpr, '') NOT IN ('', '0'), CONCAT('INV-', $nonTaxExpr), NULL),
+            IF(IFNULL($taxExpr, '')    NOT IN ('', '0'), $taxExpr, NULL)
+        ),
+        ''
+    ),
+    CONCAT('INV-', `ub`.`idtbl_invoice`)
+)";
 
 $columns = array(
 	array( 'db' => '`u`.`idtbl_invoice_payment`', 'dt' => 'idtbl_invoice_payment', 'field' => 'idtbl_invoice_payment' ),

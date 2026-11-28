@@ -34,7 +34,7 @@ include "include/topnavbar.php";
                         <div class="row mb-3">
                             <div class="col-md-3">
                                 <label class="small font-weight-bold text-dark">Date</label>
-                                <input type="date" class="form-control form-control-sm" id="cashdate">
+                                <input type="date" class="form-control form-control-sm" id="cashdate" value="<?php echo date('Y-m-d'); ?>">
                             </div>
                             
                             <div class="col-md-3">
@@ -188,7 +188,27 @@ include "include/topnavbar.php";
                     }
                 },
                 {
-                    "data": "id"
+                    // Shows both invoice numbers: "INV-<invoice no> / <tax invoice no>"
+                    // (before 16 Nov 2026 = manuelinvno / taxinvoice_no,
+                    //  from 16 Nov 2026 = nontaxinvnum_new / taxinvnum_new; decided in dailycashlist.php)
+                    "data": "id",
+                    "createdCell": function (td, cellData) {
+                        // keep the raw id so the transfer process still receives it
+                        $(td).attr('data-id', cellData);
+                    },
+                    "render": function (data, type, full) {
+                        if (type !== 'display') {
+                            return data;
+                        }
+                        var nontax = full['nontaxno'];
+                        var tax    = full['taxno'];
+                        var hasNon = nontax !== null && nontax !== '' && nontax != 0;
+                        var hasTax = tax !== null && tax !== '' && tax != 0;
+                        var parts  = [];
+                        if (hasNon) { parts.push('INV-' + nontax); }
+                        if (hasTax) { parts.push(tax); }
+                        return parts.length ? parts.join(' / ') : (data == null ? '' : data);
+                    }
                 },
                 {
                     "data": "name"
@@ -267,6 +287,14 @@ include "include/topnavbar.php";
 
     $(document).ready(function () {
 
+        // always start on the current date and load today's data immediately
+        var now = new Date();
+        var today = now.getFullYear() + '-' +
+            String(now.getMonth() + 1).padStart(2, '0') + '-' +
+            String(now.getDate()).padStart(2, '0');
+        $('#cashdate').val(today);
+        loadTable();
+
         // trigger load/reload whenever date or either filter changes
         $('#cashdate').on('change', loadTable);
         $('#filtersaletype').on('change', loadTable);
@@ -292,6 +320,9 @@ include "include/topnavbar.php";
                         if (col_idx == 0) {
                             var c = $(this).find('input[type="checkbox"]');
                             r = $(c).is(":checked") ? 2 : 0;
+                        } else if (col_idx == 1) {
+                            // raw id, not the displayed "invoice / tax invoice" text
+                            r = $(this).attr('data-id') !== undefined ? $(this).attr('data-id') : $(this).text();
                         } else {
                             r = $(this).text();
                         }

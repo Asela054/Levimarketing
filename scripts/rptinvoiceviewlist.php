@@ -11,6 +11,12 @@ session_start();
  * block against `u`.`date`, same as before.
  *
  * INVOICE TYPE FILTER - `u`.`invtype`: 0 = Non-Tax Invoice, 1 = Tax Invoice.
+ *
+ * INVOICE NUMBER (shown in the `id` column) - decided by the invoice date:
+ *   before 2026-11-16 -> manuelinvno (non-tax)       / taxinvoice_no (tax)
+ *   from   2026-11-16 -> nontaxinvnum_new (non-tax)  / taxinvnum_new (tax)
+ * Displayed as "INV-<non-tax no> / <tax no>"; a number that is empty or 0 is skipped.
+ * If an invoice has neither number it falls back to INV-<idtbl_invoice>.
  */
 
 $type =  $_SESSION['privatetype'];
@@ -19,11 +25,25 @@ $locationId = $_SESSION['location_id'];
 $table = 'tbl_invoice';
 $primaryKey = 'idtbl_invoice';
 
-// Invoice number: prefer taxinvoice_no, fall back to manuelinvno, then idtbl_invoice
-// as a last resort. Aliased explicitly to `id` since it's a computed expression -
+// Invoices before this date use the old numbering, on/after use the new numbering
+$cutoffDate = '2026-11-16';
+
+$nonTaxExpr = "(CASE WHEN `u`.`date` < '$cutoffDate' THEN `u`.`manuelinvno` ELSE `u`.`nontaxinvnum_new` END)";
+$taxExpr    = "(CASE WHEN `u`.`date` < '$cutoffDate' THEN `u`.`taxinvoice_no` ELSE `u`.`taxinvnum_new` END)";
+
+// Final text shown in the table. Aliased explicitly to `id` since it's a computed expression -
 // ssp.customized.class.php reads rows back by raw fetched column name, and a bare
 // expression with no AS would come back keyed by the whole expression text, not 'id'.
-$invoiceNoExpr = "COALESCE(NULLIF(`u`.`taxinvoice_no`, ''), `u`.`manuelinvno`, `u`.`idtbl_invoice`)";
+$invoiceNoExpr = "COALESCE(
+	NULLIF(
+		CONCAT_WS(' / ',
+			IF(IFNULL($nonTaxExpr, '') NOT IN ('', '0'), CONCAT('INV-', $nonTaxExpr), NULL),
+			IF(IFNULL($taxExpr, '')    NOT IN ('', '0'), $taxExpr, NULL)
+		),
+		''
+	),
+	CONCAT('INV-', `u`.`idtbl_invoice`)
+)";
 
 if($type==1){
 	$columns = array(
@@ -56,9 +76,10 @@ require('ssp.customized.class.php' );
 $joinQuery = "FROM `tbl_invoice` AS `u` LEFT JOIN `tbl_customer` AS `ud` ON (`ud`.`idtbl_customer` = `u`.`customerid`)";
 
 // Base clause. For $type==1 (manual invoice numbers only) keep restricting to
-// rows that actually have a manuelinvno, same as before.
+// rows that actually have an invoice number. The number checked depends on the
+// invoice date (see the cutoff above); a tax invoice number also counts.
 if($type==1){
-	$extraWhere = "`u`.`status` IN (0,1) AND `u`.`manuelinvno` IS NOT NULL";
+	$extraWhere = "`u`.`status` IN (0,1) AND ($nonTaxExpr IS NOT NULL OR $taxExpr IS NOT NULL)";
 }else{
 	$extraWhere = "`u`.`status` IN (0,1)";
 }
