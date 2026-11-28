@@ -14,9 +14,9 @@ session_start();
  *    existing per-invoice duplication from the tbl_invoice_payment_has_tbl_invoice
  *    bridge below), which would silently inflate the Total/Payamount/Payment/
  *    Balance figures shown per row.
- * 2. Invoice ID now resolves to the invoice's tax/manual invoice number
- *    (COALESCE(taxinvoice_no, manuelinvno, idtbl_invoice)) instead of the raw
- *    foreign key idtbl_invoice, matching the other invoice-related reports.
+ * 2. Invoice number (`invoiceno`) is now built from the invoice's number fields,
+ *    decided by the INVOICE date (see below), instead of the raw foreign key
+ *    idtbl_invoice, matching the other invoice-related reports.
  * 3. Added Customer (name + filter) via tbl_invoice -> tbl_customer.
  * 4. When a Payment Method filter is applied, the PAYMENT column no
  *    longer shows the full payment-header amount (`u`.`payment`), which can
@@ -31,6 +31,12 @@ session_start();
  * 5. Date/Week/Month/Date-Range filters have been removed - the report now
  *    always lists all matching payments, filterable only by Customer and
  *    Payment Method.
+ *
+ * INVOICE NUMBER (`invoiceno`) - decided by the invoice date (`i`.`date`):
+ *   before 2026-11-16 -> manuelinvno (non-tax)       / taxinvoice_no (tax)
+ *   from   2026-11-16 -> nontaxinvnum_new (non-tax)  / taxinvnum_new (tax)
+ * Displayed as "INV-<non-tax no> / <tax no>"; a number that is empty or 0 is skipped.
+ * If the invoice has neither number it falls back to INV-<idtbl_invoice>.
  *
  * NOTE ON ROW DUPLICATION: `tbl_invoice_payment_has_tbl_invoice` is a
  * many-to-many bridge (a payment can be split across more than one invoice),
@@ -50,12 +56,27 @@ if (isset($_POST['filterpaymentmethod']) && $_POST['filterpaymentmethod'] !== ''
     $filterpaymentmethod = intval($_POST['filterpaymentmethod']);
 }
 
-// Invoice number: prefer taxinvoice_no, fall back to manuelinvno, then
-// idtbl_invoice as a last resort. Aliased explicitly since it's a computed
+// Invoices before this date use the old numbering, on/after use the new numbering
+$cutoffDate = '2026-11-16';
+
+$nonTaxExpr = "(CASE WHEN `i`.`date` < '$cutoffDate' THEN `i`.`manuelinvno` ELSE `i`.`nontaxinvnum_new` END)";
+$taxExpr    = "(CASE WHEN `i`.`date` < '$cutoffDate' THEN `i`.`taxinvoice_no` ELSE `i`.`taxinvnum_new` END)";
+
+// Final text shown in the table. Aliased explicitly since it's a computed
 // expression - ssp.customized.class.php reads rows back by the raw fetched
 // column name, and a bare expression with no AS would come back keyed by
 // the whole expression text rather than the intended 'invoiceno'.
-$invoiceNoExpr = "COALESCE(NULLIF(`i`.`taxinvoice_no`, ''), `i`.`manuelinvno`, `i`.`idtbl_invoice`)";
+// (NULL when the payment has no invoice at all - the page shows '-')
+$invoiceNoExpr = "COALESCE(
+    NULLIF(
+        CONCAT_WS(' / ',
+            IF(IFNULL($nonTaxExpr, '') NOT IN ('', '0'), CONCAT('INV-', $nonTaxExpr), NULL),
+            IF(IFNULL($taxExpr, '')    NOT IN ('', '0'), $taxExpr, NULL)
+        ),
+        ''
+    ),
+    CONCAT('INV-', `i`.`idtbl_invoice`)
+)";
 
 // PAYMENT column source: full payment-header amount normally, or just the
 // amount paid via the selected method when that filter is active.
@@ -125,7 +146,7 @@ if (!empty($_POST['search_customer'])) {
     $extraWhere .= " AND `c`.`idtbl_customer` = " . $search_customer;
 }
 
-// Payment Method filter (1 = Cash, 2 = Cheque, 3 = Card, 4 = Online Transfer)
+// Payment Method filter (1 = Cash, 2 = Card, 3 = Cheque, 4 = Online Transfer)
 // Still needed to restrict WHICH rows appear at all - the LEFT JOIN to `pm`
 // above alone wouldn't exclude payments that don't have that method.
 if ($filterpaymentmethod !== null) {

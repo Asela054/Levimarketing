@@ -73,7 +73,7 @@ include "include/topnavbar.php";
                                 <thead class="thead-light">
                                 <tr>
                                     <th>PAYMENT ID</th>
-                                    <th>INVOICE ID</th>
+                                    <th>INVOICE NO</th>
                                     <th>CUSTOMER</th>
                                     <th>DATE</th>
                                     <th>TOTAL</th>
@@ -137,12 +137,11 @@ $(document).ready(function () {
         "columns": [
             { "data": "idtbl_invoice_payment" },
             {
+                // Already built on the server as "INV-<invoice no> / <tax invoice no>"
+                // (old numbers before 16 Nov 2026, new numbers from 16 Nov 2026)
                 "data": "invoiceno",
                 "render": function (data, type, full) {
-                    if (type === 'display' || type === 'filter') {
-                        return data ? ('INV-' + data) : '-';
-                    }
-                    return data;
+                    return data ? data : '-';
                 }
             },
             {

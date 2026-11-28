@@ -49,7 +49,7 @@ include "include/topnavbar.php";
                             <table class="table table-striped table-bordered table-sm nowrap" id="fullSaleTable" style="width:100%">
                                 <thead class="thead-light">
                                 <tr>
-                                    <th>INVOICE ID</th>
+                                    <th>INVOICE NO</th>
                                     <th>DATE</th>
                                     <th>CUSTOMER</th>
                                     <th>SALE TYPE</th>
@@ -102,10 +102,10 @@ $(document).ready(function () {
         "order": [[1, "desc"]],
         "columns": [
             {
+                // Already built on the server as "INV-<invoice no> / <tax invoice no>"
+                // (old numbers before 16 Nov 2026, new numbers from 16 Nov 2026)
                 "data": "id",
-                "render": function (data, type) {
-                    return (type === 'display' || type === 'filter') ? (data ? 'INV-' + data : '-') : data;
-                }
+                "defaultContent": '-'
             },
             { "data": "date" },
             { "data": "name" },

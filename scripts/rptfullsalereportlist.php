@@ -9,6 +9,12 @@ session_start();
  * Prices come from tbl_product (NOT from tbl_invoice_detail):
  *   tbl_invoice.saletype = 1 (retail)    -> tbl_product.saleprice
  *   tbl_invoice.saletype = 2 (wholesale) -> tbl_product.wholesaleprice
+ *
+ * INVOICE NUMBER (shown in the `id` column) - decided by the invoice date:
+ *   before 2026-11-16 -> manuelinvno (non-tax)       / taxinvoice_no (tax)
+ *   from   2026-11-16 -> nontaxinvnum_new (non-tax)  / taxinvnum_new (tax)
+ * Displayed as "INV-<non-tax no> / <tax no>"; a number that is empty or 0 is skipped.
+ * If an invoice has neither number it falls back to INV-<idtbl_invoice>.
  */
 
 $type       = $_SESSION['privatetype'];
@@ -17,7 +23,22 @@ $locationId = $_SESSION['location_id'];
 $table      = 'tbl_invoice_detail';
 $primaryKey = 'idtbl_invoice_detail';
 
-$invoiceNoExpr = "COALESCE(NULLIF(`u`.`taxinvoice_no`, ''), `u`.`manuelinvno`, `u`.`idtbl_invoice`)";
+// Invoices before this date use the old numbering, on/after use the new numbering
+$cutoffDate = '2026-11-16';
+
+$nonTaxExpr = "(CASE WHEN `u`.`date` < '$cutoffDate' THEN `u`.`manuelinvno` ELSE `u`.`nontaxinvnum_new` END)";
+$taxExpr    = "(CASE WHEN `u`.`date` < '$cutoffDate' THEN `u`.`taxinvoice_no` ELSE `u`.`taxinvnum_new` END)";
+
+$invoiceNoExpr = "COALESCE(
+	NULLIF(
+		CONCAT_WS(' / ',
+			IF(IFNULL($nonTaxExpr, '') NOT IN ('', '0'), CONCAT('INV-', $nonTaxExpr), NULL),
+			IF(IFNULL($taxExpr, '')    NOT IN ('', '0'), $taxExpr, NULL)
+		),
+		''
+	),
+	CONCAT('INV-', `u`.`idtbl_invoice`)
+)";
 
 // Selling price from the product table, chosen by the invoice sale type
 $salePriceExpr = "(CASE `u`.`saletype` WHEN 2 THEN `p`.`wholesaleprice` ELSE `p`.`saleprice` END)";
@@ -56,8 +77,10 @@ $joinQuery = "FROM `tbl_invoice_detail` AS `d`
 
 $extraWhere = "`d`.`status` = 1 AND `u`.`status` IN (0,1)";
 
+// For $type == 1 keep restricting to rows that actually have an invoice number.
+// The number checked depends on the invoice date; a tax invoice number also counts.
 if ($type == 1) {
-	$extraWhere .= " AND `u`.`manuelinvno` IS NOT NULL";
+	$extraWhere .= " AND ($nonTaxExpr IS NOT NULL OR $taxExpr IS NOT NULL)";
 }
 
 // Month filter (index-friendly range instead of DATE_FORMAT)
